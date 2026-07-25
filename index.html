@@ -182,6 +182,24 @@
     text-align:center;
     padding:1rem;
   }
+  .play-badge{
+    position:absolute;
+    top:50%; left:50%;
+    transform:translate(-50%,-50%);
+    width:56px; height:56px;
+    border-radius:50%;
+    background:rgba(255,255,255,0.92);
+    border:1px solid var(--gold-soft);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:var(--gold);
+    transition:transform 0.4s ease, background 0.4s ease;
+  }
+  .tile:hover .play-badge{
+    transform:translate(-50%,-50%) scale(1.08);
+    background:#FFFFFF;
+  }
   .tile-status{
     position:absolute;
     top:12px; left:12px;
@@ -299,34 +317,56 @@
      - photoUrl: the Google Photos share link for this event's album
      - image:   (optional) a cover photo URL. Leave "" for a
                 placeholder tile until you add a real photo.
+                For video events, leave this blank and the
+                YouTube thumbnail will be used automatically.
+     - videoUrl: a YouTube link instead of a photo album.
+                Use EITHER photoUrl OR videoUrl per event, not
+                both. Accepts youtube.com/watch?v=... or
+                youtu.be/... links.
   --------------------------------------------------------- */
   const EVENTS = [
- {
-    title: "Pulut Panggang Masterclass",
-    date: "6th June 2026",
-    venue: "Ruang Tamu Event Space",
-    status: "PASSED",
-    videoUrl: "https://youtu.be/fOrKpvcASlY",
-    photoUrl: "",
-    image: ""
-  },
- {
-    title: "Pickleball Afternoon",
-    date: "JULY 2026",
-    venue: "Ruang Tamu Court",
-    status: "NEW",
-    photoUrl: "https://photos.app.goo.gl/kf2Htgkm7DmiVq3t6",
-    image: "pickleballcover.jpg"
-  }
+    {
+      title: "Pulut Panggang Masterclass",
+      date: "6th June 2026",
+      venue: "Ruang Tamu Event Space",
+      status: "PASSED",
+      videoUrl: "https://youtu.be/fOrKpvcASlY",
+      photoUrl: "",
+      image: ""
+    },
+    {
+      title: "Pickleball Afternoon",
+      date: "JULY 2026",
+      venue: "Ruang Tamu Court",
+      status: "NEW",
+      photoUrl: "https://photos.app.goo.gl/kf2Htgkm7DmiVq3t6",
+      image: "pickleballcover.jpg",
+      videoUrl: ""
+    }
     // ,{
     //   title: "Next Event Name",
     //   date: "MONTH YEAR",
     //   venue: "Venue name",
     //   status: "",
     //   photoUrl: "",
-    //   image: ""
+    //   image: "",
+    //   videoUrl: ""
     // }
   ];
+
+  function youtubeId(url){
+    if(!url) return null;
+    const patterns = [
+      /youtu\.be\/([A-Za-z0-9_-]{6,})/,
+      /[?&]v=([A-Za-z0-9_-]{6,})/,
+      /embed\/([A-Za-z0-9_-]{6,})/
+    ];
+    for(const p of patterns){
+      const m = url.match(p);
+      if(m) return m[1];
+    }
+    return null;
+  }
 
   const tilesEl = document.getElementById('tiles');
   const countEl = document.getElementById('eventCount');
@@ -337,29 +377,43 @@
     countEl.textContent = EVENTS.length + (EVENTS.length === 1 ? ' EVENT' : ' EVENTS');
 
     EVENTS.forEach(function(ev){
-      const hasLink = !!ev.photoUrl;
+      const ytId = youtubeId(ev.videoUrl);
+      const linkUrl = ev.videoUrl || ev.photoUrl;
+      const hasLink = !!linkUrl;
+      const isVideo = !!ytId;
+
       const tile = document.createElement(hasLink ? 'a' : 'div');
       tile.className = 'tile';
       if(hasLink){
-        tile.href = ev.photoUrl;
+        tile.href = linkUrl;
         tile.target = '_blank';
         tile.rel = 'noopener';
       }
 
-      const mediaInner = ev.image
-        ? '<img src="' + ev.image + '" alt="' + ev.title + '">'
+      const coverSrc = ev.image || (isVideo ? ('https://img.youtube.com/vi/' + ytId + '/hqdefault.jpg') : '');
+      const mediaInner = coverSrc
+        ? '<img src="' + coverSrc + '" alt="' + ev.title + '">'
         : '<div class="ph">Cover photo<br>not added yet</div>';
+
+      const playButton = isVideo
+        ? '<div class="play-badge" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M8 5v14l11-7z"/></svg></div>'
+        : '';
+
+      const arrowLabel = hasLink
+        ? (isVideo ? 'Watch video <span>&rarr;</span>' : 'View album <span>&rarr;</span>')
+        : 'Link not added yet';
 
       tile.innerHTML =
         '<div class="tile-media">' +
           (ev.status ? '<div class="tile-status">' + ev.status + '</div>' : '') +
           mediaInner +
+          playButton +
         '</div>' +
         '<div class="tile-body">' +
           '<div class="tile-date">' + ev.date + '</div>' +
           '<div class="tile-title">' + ev.title + '</div>' +
           '<div class="tile-venue">' + ev.venue + '</div>' +
-          '<div class="tile-arrow">' + (hasLink ? 'View album <span>&rarr;</span>' : 'Album link not added yet') + '</div>' +
+          '<div class="tile-arrow">' + arrowLabel + '</div>' +
         '</div>';
 
       tilesEl.appendChild(tile);
