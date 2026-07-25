@@ -9,14 +9,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Inter:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#F5F1E8;
+    --bg:#3B1826;
     --panel:#FFFFFF;
     --panel-line:#E1D7BE;
-    --gold:#A9700F;
-    --gold-soft:#C9A227;
-    --gold-wash:rgba(169,112,15,0.08);
+    --gold:#C9A227;
+    --gold-soft:#DDBE55;
+    --gold-wash:rgba(201,162,39,0.10);
     --ink:#2A2318;
     --muted:#8B8069;
+    --cream:#F2EAE4;
+    --muted-on-bg:#C9A8B0;
+    --line-on-bg:rgba(201,162,39,0.22);
   }
   *{margin:0;padding:0;box-sizing:border-box;}
   html{scroll-behavior:smooth;}
@@ -70,7 +73,7 @@
     line-height:1.08;
     letter-spacing:-0.01em;
     margin-top:2rem;
-    color:var(--ink);
+    color:var(--cream);
     opacity:0;
     animation:riseIn 1s ease forwards;
     animation-delay:0.36s;
@@ -93,7 +96,7 @@
     font-family:'Inter',sans-serif;
     font-weight:300;
     font-size:1rem;
-    color:var(--muted);
+    color:var(--muted-on-bg);
     max-width:42ch;
     opacity:0;
     animation:riseIn 1s ease forwards;
@@ -117,21 +120,21 @@
     flex-wrap:wrap;
     gap:1rem;
     margin-bottom:2.4rem;
-    border-bottom:1px solid var(--panel-line);
+    border-bottom:1px solid var(--line-on-bg);
     padding-bottom:1.4rem;
   }
   .index-head h2{
     font-family:'Fraunces',serif;
     font-weight:400;
     font-size:clamp(1.4rem,3vw,1.9rem);
-    color:var(--ink);
+    color:var(--cream);
   }
   .index-head span{
     font-family:'Space Mono',monospace;
     font-size:0.68rem;
     letter-spacing:0.18em;
     text-transform:uppercase;
-    color:var(--muted);
+    color:var(--muted-on-bg);
   }
 
   .tiles{
@@ -267,13 +270,13 @@
   footer{
     text-align:center;
     padding:6vh 6vw 7vh;
-    border-top:1px solid var(--panel-line);
+    border-top:1px solid var(--line-on-bg);
   }
   footer p{
     font-family:'Space Mono',monospace;
     font-size:0.7rem;
     letter-spacing:0.1em;
-    color:var(--muted);
+    color:var(--muted-on-bg);
   }
   footer .mark{
     color:var(--gold);
