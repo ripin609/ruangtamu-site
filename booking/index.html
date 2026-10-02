@@ -110,6 +110,9 @@ textarea{min-height:80px;resize:vertical}
 .bar .tot span{font-size:12px;color:var(--muted)}
 .confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;font-size:14px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);top:calc(14px + env(safe-area-inset-top,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;z-index:20}
+.mgmt{display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);font-size:14px;cursor:pointer}
+.mgmt input{width:22px;height:22px;flex:none;margin:0;accent-color:var(--accent)}
+.mgmtnote{background:var(--accent-soft);color:var(--accent);border-radius:10px;padding:8px 10px;font-size:13px;margin-top:8px}
 .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 html,body{margin:0}
 #pinIn{text-align:center;font-size:22px;letter-spacing:.3em}
@@ -140,6 +143,28 @@ html,body{margin:0}
 .slotrow .st{font-weight:600;text-align:right}
 .st.free{color:var(--ok)}.st.part{color:#b5741f}.st.full{color:var(--warn)}
 .staff h2{margin-bottom:4px}
+.boardwrap{margin-top:12px}
+.board{aspect-ratio:1/1;width:100%;max-width:100%;background:#5c2427;color:#f6ece6;border-radius:6px;padding:7% 7% 6%;display:flex;flex-direction:column;position:relative;overflow:hidden}
+.board:before{content:"";position:absolute;inset:3.2%;border:1px solid rgba(214,182,140,.55);border-radius:3px;pointer-events:none}
+.b-head{text-align:center}
+.b-word{font-family:var(--f-script);font-size:clamp(30px,10vw,52px);line-height:1;color:#f6ece6}
+.b-sub{font-size:clamp(8px,2.2vw,11px);letter-spacing:.42em;text-transform:uppercase;color:#d6b68c;margin-top:2px}
+.b-title{text-align:center;font-family:var(--f-head);font-size:clamp(17px,5.4vw,26px);margin:3.5% 0 3%;color:#f6ece6}
+.b-title span{color:#d6b68c}
+.b-list{flex:1;display:flex;flex-direction:column;justify-content:flex-start;gap:0;min-height:0}
+.b-list{overflow:hidden}
+.b-row{display:grid;grid-template-columns:3.2em minmax(0,1fr);gap:.8em;align-items:center;padding:.38em 0;border-top:1px solid rgba(214,182,140,.35)}
+.b-row:first-child{border-top:none}
+.b-date{text-align:center;line-height:1.05}
+.b-date b{display:block;font-family:var(--f-head);font-size:1.55em;color:#f6ece6}
+.b-date span{font-size:.62em;letter-spacing:.14em;color:#d6b68c;text-transform:uppercase}
+.b-ev b{display:block;font-weight:500;color:#f6ece6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.b-ev span{font-size:.82em;color:#e2cbbd}
+.b-list.two{display:grid;grid-template-columns:1fr 1fr;column-gap:1.2em;align-content:start}
+.b-list.two .b-row{border-top:1px solid rgba(214,182,140,.35)}
+.b-empty{margin:auto;text-align:center;font-family:var(--f-head);font-size:clamp(15px,4.6vw,22px);color:#f6ece6;line-height:1.3}
+.b-empty small{display:block;font-family:var(--f-body);font-size:.6em;color:#d6b68c;margin-top:6px;letter-spacing:.06em}
+.b-foot{text-align:center;font-size:clamp(9px,2.6vw,12px);letter-spacing:.12em;color:#d6b68c;margin-top:3%}
 </style></head><body>
 
 <div class="wrap">
@@ -164,6 +189,16 @@ html,body{margin:0}
       <div class="calmsg" id="calMsg"></div>
     </section>
     <section class="card dayinfo" id="dayInfo" hidden></section>
+    <section class="boardwrap">
+      <div class="board" id="board">
+        <div class="b-head"><div class="b-word">Ruang Tamu</div><div class="b-sub">Event Space</div></div>
+        <div class="b-title">What's on <span>·</span> <b id="bMonth"></b></div>
+        <div class="b-list" id="bList"></div>
+        <div class="b-foot">@RuangTamu.bn &nbsp;·&nbsp; ruangtamu.online</div>
+      </div>
+      <div class="actions"><button class="btn ghost small" id="boardSave">Save board as image</button></div>
+      <p class="hint" style="font-size:12px;color:var(--muted);margin:6px 0 0">Shows confirmed events for the month. Customer events show as "Private event". Screenshot it or save it for Instagram.</p>
+    </section>
     <section class="card staff">
       <h2>Staff</h2>
       <div id="loginBox">
@@ -213,6 +248,7 @@ html,body{margin:0}
       <div class="f"><label for="eventType">Type of event</label>
         <select id="eventType" data-k="eventType"><option>Birthday</option><option>Majlis / Doa selamat</option><option>Bridal / Baby shower</option><option>Meeting / Workshop</option><option>Class</option><option>Family gathering</option><option>Other</option></select></div>
       <div class="f" id="otherWrap" hidden><label for="eventOther">Describe the event</label><input type="text" id="eventOther" data-k="eventOther"></div>
+      <div class="f"><label for="publicTitle">Title on the monthly events board (optional)</label><input type="text" id="publicTitle" data-k="publicTitle" placeholder="e.g. Pilates Morning Class"><span class="hint">Leave blank for customer events. They show as "Private event".</span></div>
     </section>
 
     <section class="card">
@@ -243,7 +279,7 @@ html,body{margin:0}
         <div class="f"><label for="serving">Food serving time</label><select id="serving" data-k="serving"></select></div>
       </div>
       <div class="f"><label for="defTables">Default tables &amp; chairs (4 long tables + 32 chairs)</label>
-        <select id="defTables" data-k="defTables"><option value="1">Yes, set up the default tables</option><option value="0">No, round tables only</option></select>
+        <select id="defTables" data-k="defTables"><option value="1">Yes, set up the default tables</option><option value="0">No default tables</option></select>
         <span class="hint" id="defHint"></span></div>
       <div class="f"><label for="rounds">Round Table + Tablecloth + 10 Chairs ($8/set)</label><select id="rounds" data-k="rounds"></select><span class="hint" id="seatHint"></span></div>
       <div class="row">
@@ -293,6 +329,7 @@ html,body{margin:0}
         <div class="f"><label for="staff">Staff</label><input type="text" id="staff" data-k="staff"></div>
       </div>
       <div class="f"><label for="notes">Other notes</label><textarea id="notes" data-k="notes"></textarea></div>
+      <label class="mgmt" for="mgmt"><input type="checkbox" id="mgmt"><span><b>Management event</b> (e.g. Pilates). No charge: the cost is covered by the per-person admission fee.</span></label>
       <div class="actions">
         <button class="btn ghost" id="pdfBtn">Open form (PDF) to print</button>
         <button class="btn ghost" id="pdfDl">Download PDF</button>
@@ -311,6 +348,7 @@ html,body{margin:0}
 <div class="toast" id="toast" hidden></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </body></html>
 <script>
 (function(){
@@ -331,13 +369,13 @@ const SESS={am:{t:"Morning, 7 AM – 12 PM",blocks:["am"]},pm:{t:"Afternoon, 12 
 
 /* ---------- state ---------- */
 /* ===== SETTINGS: paste your Google Apps Script web app URL here ===== */
-const API_URL="https://script.google.com/macros/s/AKfycbyinIZB8_AlABB0B9tItGZsfGTqcdRuiGOsdExlcoip1tYMHbvAVri6WQF8Hy25Lm5URg/exec";
+const API_URL="https://script.google.com/macros/s/AKfycbzYZKm781Nq9dyAidfcXvDnEaEklWUlB6_FYhKe9ZRGxlFShhMxbAbKx4X3_fBLx-Ep/exec";
 /* ==================================================================== */
 let PIN="";try{PIN=localStorage.getItem("rtPin")||""}catch(e){}
 let all=[], tab="up", b=null, items=[], dirty=false, origLayoutJSON="[]";
 const blank=()=>({ref:"",name:"",phone:"",eventType:"Birthday",eventOther:"",eventDate:"",session:"",tFrom:"",tTo:"",
   guests:"30",serving:"",defTables:"1",rounds:"0",tv:"0",mic:"0",wb:"0",cat:"none",catNote:"",
-  layoutNotes:"",depPaid:"0",depMethod:"Cash",receipt:"",status:"Draft",staff:"",notes:"",createdAt:""});
+  layoutNotes:"",publicTitle:"",mgmt:"0",depPaid:"0",depMethod:"Cash",receipt:"",status:"Draft",staff:"",notes:"",createdAt:""});
 
 function toast(t){const e=$("toast");e.textContent=t;e.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>e.hidden=true,2400)}
 
@@ -352,6 +390,7 @@ function calc(x){
   const r=+x.rounds||0;if(r)L.push(["Round table sets × "+r,r*8]);
   if(x.tv==="1")L.push(["Smart TV",10]);if(x.mic==="1")L.push(["Microphone & Speaker",5]);if(x.wb==="1")L.push(["Whiteboard",3]);
   const food=0;
+  if(x.mgmt==="1"){const lines=L.map(l=>[l[0],0]);lines.push(["Management event: no charge (covered by admission fee)",0,"disc"]);return {L:lines,total:0,room:0,disc:0,food:0,deposit:0}}
   const total=L.reduce((a,l)=>a+l[1],0);
   return {L,total,room,disc,food,deposit:Math.round(total*50)/100};
 }
@@ -457,11 +496,11 @@ function refresh(){
   $("catNoteRow").hidden=b.cat==="none";
   $("catNoteLbl").textContent=b.cat==="outside"?"Caterer's name":"Tamu Cafe menu notes (optional)";
   $("catHint").textContent=b.cat==="tamu"?"For information only. Food is arranged and paid with Tamu Cafe separately.":"";
-  if(!(+b.rounds)&&b.defTables!=="1"){b.defTables="1";$("defTables").value="1"}
-  $("defTables").disabled=!(+b.rounds);
-  $("defHint").textContent=+b.rounds?"":"No round tables chosen, so the default tables and chairs are set up.";
+  const noTables=b.defTables==="0"&&!(+b.rounds);
+  $("defHint").textContent=noTables?"Empty floor: no tables or chairs will be set up (e.g. Pilates).":"";
   const g=+b.guests||0,seats=(b.defTables==="1"?32:0)+(+b.rounds||0)*10;
-  $("seatHint").textContent=g>seats?"Only "+seats+" seats for "+g+" guests. Add "+Math.ceil((g-seats)/10)+" more set(s).":seats+" seats in total";
+  $("seatHint").textContent=noTables?"No seating":g>seats?"Only "+seats+" seats for "+g+" guests. Add "+Math.ceil((g-seats)/10)+" more set(s).":seats+" seats in total";
+  $("mgmt").checked=b.mgmt==="1";
   const cl=clashes(b);
   $("clash").textContent=cl.length?"Not available: this time overlaps "+cl.map(z=>z.label+" ("+fmtH(z.s)+" – "+fmtH(z.e)+")").join("; ")+". Choose another session or date.":"";
   const c=calc(b);
@@ -478,6 +517,8 @@ document.querySelectorAll("[data-k]").forEach(el=>{
     if(el.id==="depPaid"&&b.depPaid==="1"&&b.status==="Draft"){b.status="Confirmed";$("status").value="Confirmed"}
     refresh();});
 });
+$("mgmt").addEventListener("change",()=>{b.mgmt=$("mgmt").checked?"1":"0";dirty=true;
+  if(b.mgmt==="1"&&b.status==="Draft"){b.status="Confirmed";$("status").value="Confirmed"}refresh()});
 function openBooking(x){
   b=Object.assign(blank(),JSON.parse(JSON.stringify(x||{})));
   if(b.cat==="buffet"||b.cat==="trays")b.cat="tamu";delete b.ic;
@@ -506,7 +547,7 @@ $("saveBtn").onclick=async()=>{
     const r=await api({action:"save",booking:body});
     if(!r.ok){if(r.error==="clash"){delete calBusy[b.eventDate];fetchBusy(b.eventDate)}toast(r.error==="clash"?"Not available: "+(r.detail||"that time is already taken"):r.error==="pin"?"Wrong PIN":"Couldn't save. Try again.");if(r.error==="clash")load();return}
     const i=all.findIndex(o=>o.ref===body.ref);if(i>=0)all[i]=body;else all.push(body);
-    monthCache={};origLayoutJSON=JSON.stringify(items);dirty=false;refresh();toast("Booking "+b.ref+" saved to Google Sheets");
+    monthCache={};monthEvents={};origLayoutJSON=JSON.stringify(items);dirty=false;refresh();toast("Booking "+b.ref+" saved to Google Sheets");
   }catch(e){toast("No connection. Booking not saved yet, try again.")}
   finally{$("saveBtn").disabled=false;$("saveBtn").textContent="Save booking"}
 };
@@ -597,7 +638,7 @@ async function buildPdf(x){
     [x.session==="full","Full Day 7 AM - 5 PM * (Morning + Afternoon)","$290","-",x.session==="full"?290:null],
     [x.session==="hourly","Daytime hourly, from "+(x.session==="hourly"?tf:"_____")+" to "+(x.session==="hourly"?tt:"_____")+" *","$30/hr",x.session==="hourly"?hrs:"",x.session==="hourly"?c.room:null],
     [x.session==="eve","Evening, from "+(x.session==="eve"?tf:"_____")+" to "+(x.session==="eve"?tt:"_____")+" (6 - 10 PM)","$40/hr",x.session==="eve"?hrs:"",x.session==="eve"?c.room:null],
-    [x.defTables!=="0"||!(+x.rounds),"Default: 4 Long Tables + 32 Chairs (included)","-","-",null],
+    [x.defTables!=="0","Default: 4 Long Tables + 32 Chairs (included)","-","-",null],
     [+x.rounds>0,"Round Table + Tablecloth + 10 Chairs","$8/set",+x.rounds||"",+x.rounds?x.rounds*8:null],
     [x.tv==="1","Smart TV","$10","-",x.tv==="1"?10:null],
     [x.mic==="1","Microphone & Speaker","$5","-",x.mic==="1"?5:null],
@@ -610,12 +651,15 @@ async function buildPdf(x){
   y+=7;doc.setTextColor(...ink);doc.setFontSize(9.5);
   R.forEach(r=>{doc.setDrawColor(...lineC);doc.rect(M,y,W,7);box(M+2.5,y+5.3,r[0]);
     T(doc.splitTextToSize(r[1],112)[0],cx[1],y+4.8);T(r[2],cx[2],y+4.8);T(String(r[3]),cx[3],y+4.8);
-    if(r[4]!=null)T(r[4]<0?"-"+(-r[4]).toFixed(2):r[4].toFixed(2),M+W-2,y+4.8,{align:"right"});y+=7});
+    if(r[4]!=null&&x.mgmt!=="1")T(r[4]<0?"-"+(-r[4]).toFixed(2):r[4].toFixed(2),M+W-2,y+4.8,{align:"right"});y+=7});
+  if(x.mgmt==="1"){doc.setFillColor(241,226,223);doc.rect(M,y,W,7.5,"F");doc.setTextColor(...maroon);doc.setFont("helvetica","bold");
+    T("MANAGEMENT EVENT - no charge (covered by the per-person admission fee)",cx[1],y+5.1);doc.setFont("helvetica","normal");doc.setTextColor(...ink);y+=7.5}
   doc.setFont("helvetica","bold");doc.rect(M,y,W,7.5);T("Grand total",cx[1],y+5.1);T(c.total.toFixed(2),M+W-2,y+5.1,{align:"right"});y+=7.5;
   doc.rect(M,y,W,7.5);T("50% deposit to confirm booking",cx[1],y+5.1);T(c.deposit.toFixed(2),M+W-2,y+5.1,{align:"right"});y+=7.5;
   doc.setFont("helvetica","normal");doc.setFontSize(10);y+=7;
-  T("Deposit: "+(x.depPaid==="1"?money(c.deposit)+" paid by "+x.depMethod+(x.receipt?"   Receipt no. "+x.receipt:""):"$________ on ________   Receipt ________"),M,y);
-  y+=6;T("Balance: $________ on ________   [ ] Cash  [ ] Transfer   Receipt ________",M,y);
+  if(x.mgmt==="1"){T("Payment: not required (management event).",M,y);y+=6}
+  else{T("Deposit: "+(x.depPaid==="1"?money(c.deposit)+" paid by "+x.depMethod+(x.receipt?"   Receipt no. "+x.receipt:""):"$________ on ________   Receipt ________"),M,y);
+  y+=6;T("Balance: $________ on ________   [ ] Cash  [ ] Transfer   Receipt ________",M,y);}
   if(x.notes){y+=6;doc.setFontSize(9);const nl=doc.splitTextToSize("Notes: "+x.notes,W).slice(0,3);T(nl,M,y);y+=nl.length*4}
   y+=7;doc.setFontSize(9.5);doc.setFont("helvetica","bold");T("House rules:",M,y);doc.setFont("helvetica","normal");
   T("Overtime, damage or loss charged. No nails, tape, flames or hazardous items.",M+22,y);
@@ -654,15 +698,17 @@ async function buildPdf(x){
   y=10+W*250/1024+8;
   const rg=rangeOf(x)||[7,17];const startT=hr(Math.floor(rg[0])),endT=hr(Math.floor(rg[1]));
   doc.setFontSize(10);doc.setFont("helvetica","bold");
-  T("Booking no. "+(x.ref||"-")+"   |   "+fmtDate(x.eventDate)+", "+startT+" - "+endT+"   |   "+(x.guests||"-")+" guests",M,y);
+  T("Booking no. "+(x.ref||"-")+"   |   "+fmtDate(x.eventDate)+", "+startT+" - "+endT+"   |   "+(x.guests||"-")+" guests"+(x.mgmt==="1"?"   |   MANAGEMENT EVENT":""),M,y);
   doc.setFont("helvetica","normal");y+=5;
   T("Customer: "+(x.name||"-")+"   Phone: "+(x.phone||"-")+"   Event: "+(x.eventType==="Other"?(x.eventOther||"Other"):x.eventType),M,y);
   y+=7;
-  const rounds=+x.rounds||0,def=x.defTables!=="0"||!rounds;
+  const rounds=+x.rounds||0,def=x.defTables!=="0";
   const ec=(x.cat==="tamu"||x.cat==="buffet"||x.cat==="trays")?"tamu":x.cat;
   const groups=[];
   const before=[];
   if(def)before.push("Set up the default tables: 4 long tables + 32 chairs");
+  if(!def&&!rounds)before.push("EMPTY FLOOR: move all tables and chairs out of the hall (nothing set up)");
+  else if(!def)before.push("Do NOT set up the 4 long tables; store them away");
   if(rounds){before.push("Set up "+rounds+" round table"+(rounds>1?"s":"")+" with 10 chairs each ("+(rounds*10)+" chairs)");
     before.push("Iron "+rounds+" tablecloth"+(rounds>1?"s":"")+" and lay them on the round tables");}
   before.push("Arrange tables and items as shown on the floor plan (page 2)");
@@ -676,11 +722,11 @@ async function buildPdf(x){
   before.push("Tidy the surau and lay out prayer mats");
   before.push("Turn on air-conditioning and lights 30 minutes before "+startT);
   groups.push(["Before the event (room ready by "+startT+")",before]);
-  const during=["Welcome the customer and check the room together","Confirm the balance payment of "+money(calc(x).total-(x.depPaid==="1"?calc(x).deposit:0))+" is collected"];
+  const during=["Welcome the customer and check the room together",x.mgmt==="1"?"Management event: no room payment to collect":"Confirm the balance payment of "+money(calc(x).total-(x.depPaid==="1"?calc(x).deposit:0))+" is collected"];
   if(x.layoutNotes)during.push("Customer requests: "+x.layoutNotes);
   if(x.notes)during.push("Notes: "+x.notes);
   groups.push(["On the day",during]);
-  groups.push(["After the event (finish by "+endT+")",["Check the room for damage or loss and note it below","Record any overtime: ______ hours","Clear tables and stack chairs; put away tablecloths"+(rounds?" for washing":""),"Clean the floor, toilet and surau; empty bins","Turn off air-conditioning and lights"+(x.tv==="1"?" and the Smart TV":"")+"; lock up"]]);
+  groups.push(["After the event (finish by "+endT+")",["Check the room for damage or loss and note it below","Record any overtime: ______ hours",(def||rounds?"Clear tables and stack chairs; put away tablecloths"+(rounds?" for washing":""):"Put the tables and chairs back to the normal set-up"),"Clean the floor, toilet and surau; empty bins","Turn off air-conditioning and lights"+(x.tv==="1"?" and the Smart TV":"")+"; lock up"]]);
   groups.forEach(([title,list])=>{
     doc.setFont("helvetica","bold");doc.setTextColor(...maroon);doc.setFontSize(11);T(title,M,y);y+=2;
     doc.setFont("helvetica","normal");doc.setTextColor(...ink);doc.setFontSize(9.5);
@@ -723,6 +769,38 @@ $("reloadBtn").onclick=()=>{calBusy={};load();toast("Refreshing…")};
 /* ---------- availability calendar (home) ---------- */
 const SLOTW={am:[7,12],pm:[12,17],eve:[18,22]};
 const SLOTN={am:"Morning (7 AM – 12 PM)",pm:"Afternoon (12 – 5 PM)",eve:"Evening (6 – 10 PM)"};
+let monthEvents={};
+function renderBoard(){
+  const ym=ymOf(calView),ev=monthEvents[ym],list=$("bList");
+  $("bMonth").textContent=calView.toLocaleDateString("en-GB",{month:"long",year:"numeric"});
+  list.className="b-list";list.innerHTML="";
+  if(!ev){list.innerHTML='<div class="b-empty">Loading…</div>';return}
+  if(!ev.length){list.innerHTML='<div class="b-empty">The space is open all month<small>Book your event: WhatsApp +673 887 7306</small></div>';return}
+  if(ev.length>10)list.classList.add("two");
+  ev.forEach(e=>{
+    const d=new Date(e.date+"T00:00");
+    const row=document.createElement("div");row.className="b-row";
+    row.innerHTML='<div class="b-date"><b class="num"></b><span></span></div><div class="b-ev"><b></b><span></span></div>';
+    row.querySelector(".b-date b").textContent=d.getDate();
+    row.querySelector(".b-date span").textContent=d.toLocaleDateString("en-GB",{weekday:"short"});
+    row.querySelector(".b-ev b").textContent=e.title||"Event";
+    row.querySelector(".b-ev span").textContent=e.allDay||(e.s<=0&&e.e>=24)?"All day":fmtH(e.s)+" – "+fmtH(e.e);
+    list.appendChild(row);
+  });
+  fitBoard();
+}
+function fitBoard(){ // shrink the text until every event fits inside the square
+  const list=$("bList"),w=$("board").offsetWidth;if(!w)return;
+  let fs=Math.min(16,w*0.042);list.style.fontSize=fs+"px";
+  while(list.scrollHeight>list.clientHeight+1&&fs>6){fs-=0.4;list.style.fontSize=fs+"px"}
+}
+window.addEventListener("resize",()=>{if(!$("homeView").hidden)fitBoard()});
+$("boardSave").onclick=async()=>{
+  if(!window.html2canvas){toast("Couldn't load the image tool. Take a screenshot instead.");return}
+  try{const el=$("board");const cnv=await html2canvas(el,{scale:1080/el.offsetWidth,backgroundColor:null,useCORS:true});
+    const a=document.createElement("a");a.download="Ruang Tamu - "+$("bMonth").textContent+".png";a.href=cnv.toDataURL("image/png");document.body.appendChild(a);a.click();a.remove();toast("Image saved")}
+  catch(e){toast("Couldn't save the image. Take a screenshot instead.")}
+};
 let monthCache={},calView=new Date(),selDay="";calView=new Date(calView.getFullYear(),calView.getMonth(),1);
 const ymOf=d=>d.getFullYear()+"-"+pad(d.getMonth()+1);
 function slotState(ranges,w){
@@ -738,9 +816,9 @@ function freeText(ranges,w){
 async function loadMonth(ym,force){
   if(monthCache[ym]&&!force)return;
   $("calMsg").textContent="Checking bookings…";
-  try{const r=await api({action:"month",month:ym});if(!r.ok)throw 0;monthCache[ym]=r.days||{};$("calMsg").textContent=""}
+  try{const r=await api({action:"month",month:ym});if(!r.ok)throw 0;monthCache[ym]=r.days||{};monthEvents[ym]=r.events||[];$("calMsg").textContent=""}
   catch(e){$("calMsg").textContent=API_URL.indexOf("http")!==0?"The Google Sheets link hasn't been set up yet (API_URL).":"Couldn't load availability. Check the connection and tap Refresh."}
-  renderCal();if(selDay&&selDay.startsWith(ym))showDay(selDay);
+  renderCal();renderBoard();if(selDay&&selDay.startsWith(ym))showDay(selDay);
 }
 function renderCal(){
   const v=calView,ym=ymOf(v),data=monthCache[ym],cal=$("cal"),t=todayStr();
@@ -780,11 +858,11 @@ function showDay(key){
     nb.onclick=()=>{openBooking(null);b.eventDate=key;$("eventDate").value=key;dirty=true;markSessions();setTimes();refresh();fetchBusy(key)};box.appendChild(nb)}
   box.scrollIntoView({behavior:"smooth",block:"nearest"});
 }
-$("mPrev").onclick=()=>{calView=new Date(calView.getFullYear(),calView.getMonth()-1,1);renderCal();loadMonth(ymOf(calView))};
-$("mNext").onclick=()=>{calView=new Date(calView.getFullYear(),calView.getMonth()+1,1);renderCal();loadMonth(ymOf(calView))};
-$("calReload").onclick=()=>{monthCache={};loadMonth(ymOf(calView),true)};
-function goHome(){show("home");$("loginBox").hidden=!!PIN;$("loggedBox").hidden=!PIN;renderCal();loadMonth(ymOf(calView));if(selDay)showDay(selDay)}
-$("toCal").onclick=()=>{monthCache={};goHome()};
+$("mPrev").onclick=()=>{calView=new Date(calView.getFullYear(),calView.getMonth()-1,1);renderCal();renderBoard();loadMonth(ymOf(calView))};
+$("mNext").onclick=()=>{calView=new Date(calView.getFullYear(),calView.getMonth()+1,1);renderCal();renderBoard();loadMonth(ymOf(calView))};
+$("calReload").onclick=()=>{monthCache={};monthEvents={};loadMonth(ymOf(calView),true)};
+function goHome(){show("home");$("loginBox").hidden=!!PIN;$("loggedBox").hidden=!PIN;renderCal();renderBoard();loadMonth(ymOf(calView));if(selDay)showDay(selDay)}
+$("toCal").onclick=()=>{monthCache={};monthEvents={};goHome()};
 $("openBk").onclick=()=>{show("list");load()};
 $("logoutBtn").onclick=()=>{PIN="";try{localStorage.removeItem("rtPin")}catch(e){};goHome()};
 
