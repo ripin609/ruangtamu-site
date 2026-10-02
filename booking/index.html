@@ -164,7 +164,10 @@ html,body{margin:0}
 .b-list.two .b-row{border-top:1px solid rgba(214,182,140,.35)}
 .b-empty{margin:auto;text-align:center;font-family:var(--f-head);font-size:clamp(15px,4.6vw,22px);color:#f6ece6;line-height:1.3}
 .b-empty small{display:block;font-family:var(--f-body);font-size:.6em;color:#d6b68c;margin-top:6px;letter-spacing:.06em}
-.b-foot{text-align:center;font-size:clamp(9px,2.6vw,12px);letter-spacing:.12em;color:#d6b68c;margin-top:3%}
+.b-foot{display:flex;flex-direction:column;align-items:center;gap:.35em;font-size:clamp(9px,2.7vw,12.5px);letter-spacing:.04em;color:#d6b68c;margin-top:3%;padding-top:3%;border-top:1px solid rgba(214,182,140,.45)}
+.b-fl{display:flex;align-items:center;gap:.5em}
+.b-fl b{color:#f6ece6;font-weight:500}
+.b-ic{width:1.35em;height:1.35em;flex:none}
 </style></head><body>
 
 <div class="wrap">
@@ -194,7 +197,10 @@ html,body{margin:0}
         <div class="b-head"><div class="b-word">Ruang Tamu</div><div class="b-sub">Event Space</div></div>
         <div class="b-title">What's on <span>·</span> <b id="bMonth"></b></div>
         <div class="b-list" id="bList"></div>
-        <div class="b-foot">@RuangTamu.bn &nbsp;·&nbsp; ruangtamu.online</div>
+        <div class="b-foot">
+          <div class="b-fl"><svg class="b-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5h3l1.6-2.3h6.8L17 8.5h3a1 1 0 0 1 1 1V18a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5a1 1 0 0 1 1-1z" fill="none" stroke="#d6b68c" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="13.5" r="3.3" fill="none" stroke="#d6b68c" stroke-width="1.6"/></svg><span>Instagram: <b>RuangTamu.bn</b></span></div>
+          <div class="b-fl"><svg class="b-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 3.5h2.6l1.4 4-2 1.5a11 11 0 0 0 6.4 6.4l1.5-2 4 1.4v2.6a1.6 1.6 0 0 1-1.7 1.6A16.5 16.5 0 0 1 5 5.2a1.6 1.6 0 0 1 1.6-1.7z" fill="none" stroke="#d6b68c" stroke-width="1.6" stroke-linejoin="round"/></svg><span>Contact: <b>+673 8877306</b> or <b>+673 8861673</b></span></div>
+        </div>
       </div>
       <div class="actions"><button class="btn ghost small" id="boardSave">Save board as image</button></div>
       <p class="hint" style="font-size:12px;color:var(--muted);margin:6px 0 0">Shows confirmed events for the month. Customer events show as "Private event". Screenshot it or save it for Instagram.</p>
