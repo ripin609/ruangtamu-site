@@ -110,6 +110,11 @@ textarea{min-height:80px;resize:vertical}
 .bar .tot span{font-size:12px;color:var(--muted)}
 .confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;font-size:14px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);top:calc(14px + env(safe-area-inset-top,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;z-index:20}
+.row3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+@media (max-width:420px){.row3{grid-template-columns:minmax(0,1fr)}}
+.foodsum{margin-top:10px;background:var(--mute-soft);border-radius:10px;padding:8px 10px;font-size:14px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px}
+.foodsum:empty{display:none}
+.foodsum .disc{color:var(--ok)}
 .mgmt{display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);font-size:14px;cursor:pointer}
 .mgmt input{width:22px;height:22px;flex:none;margin:0;accent-color:var(--accent)}
 .mgmtnote{background:var(--accent-soft);color:var(--accent);border-radius:10px;padding:8px 10px;font-size:13px;margin-top:8px}
@@ -342,6 +347,25 @@ html,body{margin:0}
       <h2><span class="n">4</span>Catering</h2>
       <div class="f"><label for="cat">Catering</label>
         <select id="cat" data-k="cat"><option value="none">No catering</option><option value="tamu">Tamu Cafe</option><option value="outside">Outside catering</option></select></div>
+      <div id="tamuBox" hidden>
+        <div class="f"><label for="pkg">Buffet package</label>
+          <select id="pkg" data-k="pkg"><option value="A">$6 / pax – Ayam Goreng set</option><option value="B">$10 / pax – Nasi Lemak set</option><option value="C">$10 / pax – Kelupis / Tumpi set</option></select>
+          <span class="hint" id="pkgItems"></span></div>
+        <div class="row">
+          <div class="f"><label for="pax">No. of pax</label><select id="pax" data-k="pax"></select><span class="hint">Min. 30, max. 60 pax</span></div>
+          <div class="f"><label for="cordial">Kordial (cordial)</label><select id="cordial" data-k="cordial"></select></div>
+        </div>
+        <div class="row">
+          <div class="f"><label for="noodle">Noodles</label><select id="noodle" data-k="noodle"><option>Mee Goreng</option><option>Kuey Teow Goreng</option></select></div>
+          <div class="f"><label for="protein">Noodles with</label><select id="protein" data-k="protein"><option value="Ayam">Ayam (chicken)</option><option value="Daging">Daging (beef)</option><option value="Kerang">Kerang (cockles)</option></select></div>
+        </div>
+        <div class="f" id="kelupisRow"><label for="kelupis">Kelupis or Tumpi</label><select id="kelupis" data-k="kelupis"><option>Kelupis</option><option>Tumpi</option></select></div>
+        <div class="f"><label>Choice of 3 kuih</label>
+          <div class="row3"><select id="kuih1" data-k="kuih1" aria-label="Kuih 1"></select><select id="kuih2" data-k="kuih2" aria-label="Kuih 2"></select><select id="kuih3" data-k="kuih3" aria-label="Kuih 3"></select></div>
+          <span class="warnline" id="kuihWarn"></span></div>
+        <div class="warnline" id="noticeWarn"></div>
+        <div class="foodsum num" id="foodSum"></div>
+      </div>
       <div class="f" id="catNoteRow" hidden><label for="catNote" id="catNoteLbl">Caterer's name</label><input type="text" id="catNote" data-k="catNote"><span class="hint" id="catHint"></span></div>
     </section>
 
@@ -418,15 +442,34 @@ const SESS={am:{t:"Morning, 7 AM – 12 PM",blocks:["am"]},pm:{t:"Afternoon, 12 
 
 /* ---------- state ---------- */
 /* ===== SETTINGS: paste your Google Apps Script web app URL here ===== */
-const API_URL="https://script.google.com/macros/s/AKfycbzw6T8Ef7xDLUzCHI6h-688-YsiozTbBd2VPh_MgEccGDH5Ze_jKfxSniEzRCMWoHI1RA/exec";
+const API_URL="https://script.google.com/macros/s/AKfycbzbHt7Q_nfCmXELWRHmctQ6Q3tgQc3GIUE1tfMUbwwPY4XZVUoj07l-GDSwF1j-I5IOnQ/exec";
 /* ==================================================================== */
 let PIN="";try{PIN=localStorage.getItem("rtPin")||""}catch(e){}
 let all=[], tab="up", b=null, items=[], dirty=false, origLayoutJSON="[]";
 const blank=()=>({ref:"",name:"",phone:"",eventType:"Birthday",eventOther:"",eventDate:"",session:"",tFrom:"",tTo:"",
-  guests:"30",serving:"",defTables:"1",rounds:"0",tv:"0",mic:"0",wb:"0",cat:"none",catNote:"",
+  guests:"30",serving:"",defTables:"1",rounds:"0",tv:"0",mic:"0",wb:"0",cat:"none",catNote:"",pkg:"A",pax:"30",noodle:"Mee Goreng",protein:"Ayam",kelupis:"Kelupis",kuih1:"Kusui",kuih2:"Seri Muka",kuih3:"Bingka Susu",cordial:"Manisan",
   layoutNotes:"",publicTitle:"",mgmt:"0",depPaid:"0",depMethod:"Cash",receipt:"",status:"Draft",staff:"",notes:"",createdAt:""});
 
 function toast(t){const e=$("toast");e.textContent=t;e.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>e.hidden=true,2400)}
+
+/* ---------- Tamu Cafe buffet menu ---------- */
+const MENU={
+  A:{label:"$6 / pax – Ayam Goreng set",price:6,main:"Ayam Goreng (fried chicken)",extra:"Cucur Udang (prawn fritters)"},
+  B:{label:"$10 / pax – Nasi Lemak set",price:10,main:"Nasi Lemak Ayam Goreng (coconut rice with fried chicken)",extra:"Air Mineral (mineral water)"},
+  C:{label:"$10 / pax – Kelupis / Tumpi set",price:10,main:"Kelupis / Tumpi & Ayam Kari (chicken curry)",extra:"Air Mineral (mineral water)"}
+};
+const KUIH=["Kusui","Seri Muka","Bingka Susu","Bingka Ubi Kayu","Bingka Kacang Hijau","Bingka Kacang Merah","Talam Lapis Ubi Kayu"];
+const CORDIAL=["Manisan","Orange","Bandung","Fruit Punch"];
+const isTamuCat=x=>x.cat==="tamu"||x.cat==="buffet"||x.cat==="trays";
+function menuLines(x){ // the chosen menu, in order
+  const m=MENU[x.pkg]||MENU.A;
+  const main=x.pkg==="C"?(x.kelupis||"Kelupis")+" & Ayam Kari (chicken curry)":m.main;
+  return [(x.noodle||"Mee Goreng")+" with "+(x.protein||"Ayam")+" (fried noodles)",main,
+    "Kuih (3 choices): "+[x.kuih1,x.kuih2,x.kuih3].filter(Boolean).join(", "),m.extra,"Teh Tarik (pulled milk tea)","Kordial: "+(x.cordial||"Manisan")];
+}
+(function(){const p=$("pax");for(let i=30;i<=60;i++)p.add(new Option(i,i));
+  ["kuih1","kuih2","kuih3"].forEach(id=>KUIH.forEach(k=>$(id).add(new Option(k,k))));
+  CORDIAL.forEach(c=>$("cordial").add(new Option(c,c)));})();
 
 /* ---------- pricing ---------- */
 function calc(x){
@@ -438,10 +481,14 @@ function calc(x){
   const disc=0;
   const r=+x.rounds||0;if(r)L.push(["Round table sets × "+r,r*8]);
   if(x.tv==="1")L.push(["Smart TV",10]);if(x.mic==="1")L.push(["Microphone & Speaker",5]);if(x.wb==="1")L.push(["Whiteboard",3]);
-  const food=0;
-  if(x.mgmt==="1"){const lines=L.map(l=>[l[0],0]);lines.push(["Management event: no charge (covered by admission fee)",0,"disc"]);return {L:lines,total:0,room:0,disc:0,food:0,deposit:0}}
-  const total=L.reduce((a,l)=>a+l[1],0);
-  return {L,total,room,disc,food,deposit:Math.round(total*50)/100};
+  let space=L.reduce((a,l)=>a+l[1],0);
+  let lines=L;
+  if(x.mgmt==="1"){lines=L.map(l=>[l[0],0]);lines.push(["Management event: no charge for the space (covered by admission fee)",0,"disc"]);space=0;room=0}
+  let food=0,foodSub=0,foodDisc=0;
+  if(isTamuCat(x)&&MENU[x.pkg]){const m=MENU[x.pkg],pax=+x.pax||30;foodSub=m.price*pax;foodDisc=Math.round(foodSub*5)/100;food=foodSub-foodDisc;
+    lines=lines.concat([["Tamu Cafe buffet: "+m.label.split(" – ")[1]+", "+pax+" pax × $"+m.price,foodSub,"food"],["Less 5% Tamu Cafe catering discount",-foodDisc,"disc"]])}
+  const total=Math.round((space+food)*100)/100;
+  return {L:lines,total,room,disc:foodDisc,food,foodSub,foodDisc,space,deposit:Math.round(space*50)/100};
 }
 /* ---------- availability (app bookings + Google Calendar) ---------- */
 const WIN={am:[7,12],pm:[12,17],full:[7,17]};
@@ -542,9 +589,19 @@ function fillForm(){
 }
 function refresh(){
   $("otherWrap").hidden=b.eventType!=="Other";
-  $("catNoteRow").hidden=b.cat==="none";
-  $("catNoteLbl").textContent=b.cat==="outside"?"Caterer's name":"Tamu Cafe menu notes (optional)";
-  $("catHint").textContent=b.cat==="tamu"?"For information only. Food is arranged and paid with Tamu Cafe separately.":"";
+  const tamu=isTamuCat(b);
+  $("tamuBox").hidden=!tamu;$("catNoteRow").hidden=b.cat==="none";
+  $("catNoteLbl").textContent=b.cat==="outside"?"Caterer's name":"Other food requests (optional)";
+  $("catHint").textContent="";
+  if(tamu){
+    $("kelupisRow").hidden=b.pkg!=="C";
+    $("pkgItems").textContent="Includes: "+menuLines(b).join(" · ");
+    const ks=[b.kuih1,b.kuih2,b.kuih3];$("kuihWarn").textContent=new Set(ks).size<3?"Please choose 3 different kuih.":"";
+    let warn="";if(b.eventDate){const days=Math.round((new Date(b.eventDate+"T00:00")-new Date(todayStr()+"T00:00"))/864e5);if(days<7)warn="Tamu Cafe needs at least 7 days' notice for catering. This event is in "+days+" day"+(days===1?"":"s")+".";}
+    $("noticeWarn").textContent=warn;
+    const c0=calc(b);
+    $("foodSum").innerHTML='<span>Food: '+(+b.pax)+' pax × $'+MENU[b.pkg].price+'</span><span>'+money(c0.foodSub)+'</span><span class="disc">Less 5% catering discount</span><span class="disc">−'+money(c0.foodDisc)+'</span><b>Food total</b><b>'+money(c0.food)+'</b>';
+  }
   const noTables=b.defTables==="0"&&!(+b.rounds);
   $("defHint").textContent=noTables?"Empty floor: no tables or chairs will be set up (e.g. Pilates).":"";
   const g=+b.guests||0,seats=(b.defTables==="1"?32:0)+(+b.rounds||0)*10;
@@ -553,9 +610,9 @@ function refresh(){
   const cl=clashes(b);
   $("clash").textContent=cl.length?"Not available: this time overlaps "+cl.map(z=>z.label+" ("+fmtH(z.s)+" – "+fmtH(z.e)+")").join("; ")+". Choose another session or date.":"";
   const c=calc(b);
-  $("lines").innerHTML=c.L.length?c.L.map(l=>'<dt'+(l[2]?' class="disc"':'')+'></dt><dd'+(l[2]?' class="disc"':'')+'>'+(l[1]<0?"−"+money(-l[1]):money(l[1]))+'</dd>').join("")+'<dt><b>Grand total</b></dt><dd><b>'+money(c.total)+'</b></dd><dt>50% deposit</dt><dd>'+money(c.deposit)+'</dd>':'<dt>Choose a session to see the price</dt><dd></dd>';
+  $("lines").innerHTML=c.L.length?c.L.map(l=>'<dt'+(l[2]==="disc"?' class="disc"':'')+'></dt><dd'+(l[2]==="disc"?' class="disc"':'')+'>'+(l[1]<0?"−"+money(-l[1]):money(l[1]))+'</dd>').join("")+(c.food?'<dt>Event space subtotal</dt><dd>'+money(c.space)+'</dd><dt>Food total (after 5% off)</dt><dd>'+money(c.food)+'</dd>':'')+'<dt><b>Grand total</b></dt><dd><b>'+money(c.total)+'</b></dd><dt>50% deposit (event space only)</dt><dd>'+money(c.deposit)+'</dd>':'<dt>Choose a session to see the price</dt><dd></dd>';
   [...$("lines").querySelectorAll("dt")].forEach((dt,i)=>{if(c.L[i])dt.textContent=c.L[i][0]});
-  $("totLbl").textContent=money(c.total);$("depLbl").textContent="50% deposit "+money(c.deposit);
+  $("totLbl").textContent=money(c.total);$("depLbl").textContent="Deposit (50% of space) "+money(c.deposit);
   $("refLbl").textContent=b.ref||"New booking";
 }
 document.querySelectorAll("[data-k]").forEach(el=>{
@@ -590,13 +647,15 @@ $("saveBtn").onclick=async()=>{
   if(!b.createdAt)b.createdAt=new Date().toISOString();
   b.updatedAt=new Date().toISOString();
   const c=calc(b);
-  const body=Object.assign({},b,{room:c.room,discount:c.disc,food:c.food,total:c.total,deposit:c.deposit,layout:JSON.stringify(items)});
+  if(isTamuCat(b)&&new Set([b.kuih1,b.kuih2,b.kuih3]).size<3){toast("Please choose 3 different kuih");$("kuihWarn").scrollIntoView({block:"center"});return}
+  const body=Object.assign({},b,{room:c.room,discount:c.foodDisc,food:c.food,space:c.space,total:c.total,deposit:c.deposit,layout:JSON.stringify(items)});
   $("saveBtn").disabled=true;$("saveBtn").textContent="Saving…";
   try{
     const r=await api({action:"save",booking:body});
     if(!r.ok){if(r.error==="clash"){delete calBusy[b.eventDate];fetchBusy(b.eventDate)}toast(r.error==="clash"?"Not available: "+(r.detail||"that time is already taken"):r.error==="pin"?"Wrong PIN":"Couldn't save. Try again.");if(r.error==="clash")load();return}
     const i=all.findIndex(o=>o.ref===body.ref);if(i>=0)all[i]=body;else all.push(body);
     monthCache={};monthEvents={};origLayoutJSON=JSON.stringify(items);dirty=false;refresh();toast("Booking "+b.ref+" saved to Google Sheets");
+    if(b.status==="Confirmed")emailForm(Object.assign({},b));
   }catch(e){toast("No connection. Booking not saved yet, try again.")}
   finally{$("saveBtn").disabled=false;$("saveBtn").textContent="Save booking"}
 };
@@ -660,11 +719,12 @@ async function buildPdf(x){
   const [bb,bc]=await Promise.all([loadData("banner-booking.jpg"),loadData("banner-config.jpg")]);
   const box=(bx,by,on)=>{doc.setDrawColor(...ink);doc.setLineWidth(.3);doc.rect(bx,by-3.2,3.6,3.6);if(on){doc.setLineWidth(.6);doc.line(bx+.7,by-1.4,bx+1.5,by-.4);doc.line(bx+1.5,by-.4,bx+3,by-2.7)}};
   const T=(s,tx,ty,o)=>{doc.text(String(s),tx,ty,o||{})};
+  const ONE=isTamuCat(x),rh=ONE?6.2:7;
   // page 1
   doc.addImage(bb,"JPEG",M,10,W,W*250/1024);
   let y=10+W*250/1024+8;
   doc.setFont("helvetica","bold");doc.setFontSize(10);doc.setTextColor(...ink);
-  box(M,y,false);T("Customer copy",M+5,y);box(M+34,y,false);T("Office copy",M+39,y);
+  box(M,y,false);T("Customer copy",M+5,y);box(M+34,y,false);T("Office copy",M+39,y);if(ONE){box(M+64,y,false);T("Tamu Cafe copy",M+69,y)}
   doc.setFont("helvetica","normal");T("Booking no. "+(x.ref||"-"),M+W,y,{align:"right"});
   y+=5;
   // customer grid
@@ -679,8 +739,9 @@ async function buildPdf(x){
   // items table
   const tf=x.tFrom?hr(+x.tFrom):"_____",tt=x.tTo?hr(+x.tTo):"_____";
   const hrs=x.tFrom&&x.tTo?(x.tTo-x.tFrom):"";
-  const isTamu=x.cat==="tamu"||x.cat==="buffet"||x.cat==="trays";
-  const catLbl=isTamu?"Catering: Tamu Cafe"+(x.catNote?" ("+x.catNote+")":""):x.cat==="outside"?"Catering: outside caterer - "+(x.catNote||"-"):"Catering: none";
+  const isTamu=isTamuCat(x);
+  const catLbl=x.cat==="outside"?"Catering: outside caterer - "+(x.catNote||"-"):"Catering: none";
+  const mm=MENU[x.pkg]||MENU.A;
   const R=[
     [x.session==="am","Morning 7 AM - 12 PM *","$145","-",x.session==="am"?145:null],
     [x.session==="pm","Afternoon 12 - 5 PM","$145","-",x.session==="pm"?145:null],
@@ -692,27 +753,41 @@ async function buildPdf(x){
     [x.tv==="1","Smart TV","$10","-",x.tv==="1"?10:null],
     [x.mic==="1","Microphone & Speaker","$5","-",x.mic==="1"?5:null],
     [x.wb==="1","Whiteboard","$3","-",x.wb==="1"?3:null],
-    [x.cat!=="none"&&!!x.cat,catLbl,"","",null]
-  ];
+  ].map(r=>r.concat(["space"]));
+  if(isTamu){R.push([true,"Tamu Cafe buffet: "+mm.label.split(" – ")[1]+" (menu below)","$"+mm.price+"/pax",x.pax||30,c.foodSub,"food"]);
+    R.push([true,"Less 5% Tamu Cafe catering discount","","",-c.foodDisc,"food"]);}
+  else R.push([x.cat!=="none"&&!!x.cat,catLbl,"","",null,"food"]);
   const cx=[M,M+9,M+124,M+146,M+160];
   doc.setFillColor(243,238,235);doc.rect(M,y,W,7,"F");doc.setTextColor(...grey);doc.setFontSize(9);
   T("Item",cx[1],y+4.8);T("Rate",cx[2],y+4.8);T("Qty",cx[3],y+4.8);T("Amount ($)",M+W-2,y+4.8,{align:"right"});
   y+=7;doc.setTextColor(...ink);doc.setFontSize(9.5);
-  R.forEach(r=>{doc.setDrawColor(...lineC);doc.rect(M,y,W,7);box(M+2.5,y+5.3,r[0]);
-    T(doc.splitTextToSize(r[1],112)[0],cx[1],y+4.8);T(r[2],cx[2],y+4.8);T(String(r[3]),cx[3],y+4.8);
-    if(r[4]!=null&&x.mgmt!=="1")T(r[4]<0?"-"+(-r[4]).toFixed(2):r[4].toFixed(2),M+W-2,y+4.8,{align:"right"});y+=7});
+  R.forEach(r=>{const o=rh/2+1.3;doc.setDrawColor(...lineC);doc.rect(M,y,W,rh);box(M+2.5,y+o+.5,r[0]);
+    T(doc.splitTextToSize(r[1],112)[0],cx[1],y+o);T(r[2],cx[2],y+o);T(String(r[3]),cx[3],y+o);
+    if(r[4]!=null&&!(x.mgmt==="1"&&r[5]==="space"))T(r[4]<0?"-"+(-r[4]).toFixed(2):r[4].toFixed(2),M+W-2,y+o,{align:"right"});y+=rh});
   if(x.mgmt==="1"){doc.setFillColor(241,226,223);doc.rect(M,y,W,7.5,"F");doc.setTextColor(...maroon);doc.setFont("helvetica","bold");
-    T("MANAGEMENT EVENT - no charge (covered by the per-person admission fee)",cx[1],y+5.1);doc.setFont("helvetica","normal");doc.setTextColor(...ink);y+=7.5}
+    T("MANAGEMENT EVENT - no charge for the space (covered by the per-person admission fee)",cx[1],y+5.1);doc.setFont("helvetica","normal");doc.setTextColor(...ink);y+=7.5}
   doc.setFont("helvetica","bold");doc.rect(M,y,W,7.5);T("Grand total",cx[1],y+5.1);T(c.total.toFixed(2),M+W-2,y+5.1,{align:"right"});y+=7.5;
-  doc.rect(M,y,W,7.5);T("50% deposit to confirm booking",cx[1],y+5.1);T(c.deposit.toFixed(2),M+W-2,y+5.1,{align:"right"});y+=7.5;
+  doc.rect(M,y,W,7.5);T("50% deposit to confirm booking (event space only)",cx[1],y+5.1);T(c.deposit.toFixed(2),M+W-2,y+5.1,{align:"right"});y+=7.5;
   doc.setFont("helvetica","normal");doc.setFontSize(10);y+=7;
-  if(x.mgmt==="1"){T("Payment: not required (management event).",M,y);y+=6}
+  if(x.mgmt==="1"&&!c.food){T("Payment: not required (management event).",M,y);y+=6}
   else{T("Deposit: "+(x.depPaid==="1"?money(c.deposit)+" paid by "+x.depMethod+(x.receipt?"   Receipt no. "+x.receipt:""):"$________ on ________   Receipt ________"),M,y);
   y+=6;T("Balance: $________ on ________   [ ] Cash  [ ] Transfer   Receipt ________",M,y);}
   if(x.notes){y+=6;doc.setFontSize(9);const nl=doc.splitTextToSize("Notes: "+x.notes,W).slice(0,3);T(nl,M,y);y+=nl.length*4}
   y+=7;doc.setFontSize(9.5);doc.setFont("helvetica","bold");T("House rules:",M,y);doc.setFont("helvetica","normal");
   T("Overtime, damage or loss charged. No nails, tape, flames or hazardous items.",M+22,y);
-  y+=12;T("Customer signature ____________________   Date __________   Staff "+(x.staff?x.staff:"____________________"),M,y);
+  if(ONE){y+=5;doc.setFontSize(8.8);const ml=menuLines(x);let col=0;const cells=[];
+    ml.forEach(t=>{const wide=doc.getTextWidth(t)>82;if(wide&&col===1){col=0;cells.push(null)}cells.push({t,wide,r:0});if(wide)col=0;else col^=1});
+    let rr=0,cc=0;cells.forEach(k=>{if(!k){rr++;cc=0;return}k.r=rr;k.c=cc;if(k.wide||cc===1){rr++;cc=0}else cc=1});const nrows=rr+(cc?1:0);
+    const bh=7+nrows*5.6+(x.catNote?5:0)+5;
+    doc.setFillColor(248,244,241);doc.setDrawColor(...lineC);doc.rect(M,y,W,bh,"FD");
+    doc.setFont("helvetica","bold");doc.setFontSize(10);doc.setTextColor(...maroon);T("Tamu Cafe menu: "+mm.label+"  ·  "+(x.pax||30)+" pax",M+3,y+5.5);
+    doc.setFont("helvetica","normal");doc.setTextColor(...ink);doc.setFontSize(8.8);
+    let my=y+11.5;cells.forEach(k=>{if(!k)return;const mx=M+3+k.c*89,yy=my+k.r*5.6;box(mx,yy,true);T(doc.splitTextToSize(k.t,k.wide?W-12:82)[0],mx+5,yy)});my+=nrows*5.6;
+    if(x.catNote){T(doc.splitTextToSize("Other requests: "+x.catNote,W-6)[0],M+3,my);my+=5}
+    doc.setFontSize(8);doc.setTextColor(...grey);T("Orders at least 7 days before the event  ·  30 - 60 pax  ·  Food total "+money(c.food)+" (after 5% off), included in the grand total",M+3,my);
+    doc.setTextColor(...ink);doc.setFontSize(9.5);y+=bh}
+  y+=ONE?10:12;T("Customer signature ____________________   Date __________   Staff "+(x.staff?x.staff:"____________________"),M,y);
+  if(ONE){y+=8;T("Received by Tamu Cafe ____________________   Date __________",M,y)}
   y+=8;doc.setFont("helvetica","italic");T("Office:",M,y);doc.setFont("helvetica","normal");
   [["Calendar",false],["Receipt",x.depPaid==="1"],["Cafe order",false],["Room checked",false],["Balance paid",false]].reduce((xx,[l,on])=>{box(xx,y,on);T(l,xx+5,y);return xx+doc.getTextWidth(l)+12},M+14);
   doc.setFontSize(7.5);doc.setTextColor(...grey);T("Ruang Tamu Event Space  ·  WhatsApp +673 887 7306  ·  Call +673 886 1673  ·  Prices in BND",105,290,{align:"center"});
@@ -762,7 +837,7 @@ async function buildPdf(x){
   if(x.tv==="1")before.push("Set up the Smart TV in its agreed place and test screen sharing / HDMI");
   if(x.mic==="1")before.push("Set up the microphone & speaker, test sound and charge or replace batteries");
   if(x.wb==="1")before.push("Place the whiteboard with working markers and a duster");
-  if(ec==="tamu")before.push("Tell Tamu Cafe kitchen: "+(x.guests||"-")+" pax, serving at "+(x.serving||"(time to confirm)")+(x.catNote?", menu: "+x.catNote:""));
+  if(ec==="tamu")before.push("Give the Tamu Cafe copy of the booking form to Tamu Cafe: "+(MENU[x.pkg]||MENU.A).label+", "+(x.pax||30)+" pax, serving at "+(x.serving||"(time to confirm)"));
   if(ec==="outside")before.push("Outside caterer: "+(x.catNote||"-")+". Clear the food table area and agree their arrival time");
   if(ec&&ec!=="none")before.push("Set up the food / buffet table");
   before.push("Clean the toilet & shower; refill tissue, soap and hand towels");
@@ -800,6 +875,19 @@ async function pdfAction(mode){
 }
 $("pdfBtn").onclick=()=>pdfAction("open");$("pdfDl").onclick=()=>pdfAction("download");
 
+/* ---------- email the PDF when a booking is Confirmed ---------- */
+async function emailForm(x){
+  if(!window.jspdf)return;
+  try{
+    const doc=await buildPdf(x);
+    const pdf=doc.output("datauristring").split(",")[1];
+    const name=x.ref+" "+(x.name||"booking").replace(/[^\w\s-]/g,"")+".pdf";
+    const r=await api({action:"email",ref:x.ref,filename:name,pdf:pdf});
+    if(r.ok)toast("Booking form emailed to "+(r.to||"the office"));
+    else if(r.error==="no_email")toast("Saved. Email not set up yet (EMAIL_TO in the script).");
+    else toast("Saved, but the form could not be emailed.");
+  }catch(e){toast("Saved, but the form could not be emailed.")}
+}
 /* ---------- Google Sheets connection ---------- */
 async function api(payload){
   const r=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(Object.assign({pin:PIN},payload))});
