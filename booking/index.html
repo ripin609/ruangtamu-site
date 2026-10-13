@@ -328,10 +328,7 @@ html,body{margin:0}
 
     <section class="card">
       <h2><span class="n">3</span>Guests &amp; add-ons</h2>
-      <div class="row">
-        <div class="f"><label for="guests">No. of guests</label><select id="guests" data-k="guests"></select><span class="hint">Max. 60 pax</span></div>
-        <div class="f"><label for="serving">Food serving time</label><select id="serving" data-k="serving"></select></div>
-      </div>
+      <div class="f"><label for="guests">No. of guests</label><select id="guests" data-k="guests"></select><span class="hint">Max. 60 pax</span></div>
       <div class="f"><label for="defTables">Default tables &amp; chairs (4 long tables + 32 chairs)</label>
         <select id="defTables" data-k="defTables"><option value="1">Yes, set up the default tables</option><option value="0">No default tables</option></select>
         <span class="hint" id="defHint"></span></div>
@@ -351,6 +348,7 @@ html,body{margin:0}
         <div class="f"><label for="pkg">Buffet package</label>
           <select id="pkg" data-k="pkg"><option value="A">$6 / pax – Ayam Goreng set</option><option value="B">$10 / pax – Nasi Lemak set</option><option value="C">$10 / pax – Kelupis / Tumpi set</option></select>
           <span class="hint" id="pkgItems"></span></div>
+        <div class="f"><label for="serving">Food serving time</label><select id="serving" data-k="serving"></select></div>
         <div class="row">
           <div class="f"><label for="pax">No. of pax</label><select id="pax" data-k="pax"></select><span class="hint">Min. 30, max. 60 pax</span></div>
           <div class="f"><label for="cordial">Kordial (cordial)</label><select id="cordial" data-k="cordial"></select></div>
@@ -393,18 +391,11 @@ html,body{margin:0}
       <h2><span class="n">6</span>Payment &amp; status</h2>
       <dl class="lines num" id="lines"></dl>
       <div class="row">
-        <div class="f"><label for="depPaid">Deposit (50%)</label><select id="depPaid" data-k="depPaid"><option value="0">Not paid yet</option><option value="1">Paid</option></select></div>
+        <div class="f"><label for="depPaid" id="depPaidLbl">Deposit (50%)</label><select id="depPaid" data-k="depPaid"><option value="0">Not paid yet</option><option value="1">Paid</option></select></div>
         <div class="f"><label for="depMethod">Paid by</label><select id="depMethod" data-k="depMethod"><option>Cash</option><option>Bank transfer</option></select></div>
       </div>
       <div class="f"><label for="receipt">Receipt no.</label><input type="text" id="receipt" data-k="receipt"></div>
-      <div id="fdBox" hidden>
-        <div class="row">
-          <div class="f"><label for="fdPaid">Food deposit (50%, compulsory)</label><select id="fdPaid" data-k="fdPaid"><option value="0">Not paid yet</option><option value="1">Paid</option></select></div>
-          <div class="f"><label for="fdMethod">Paid by</label><select id="fdMethod" data-k="fdMethod"><option>Cash</option><option>Bank transfer</option></select></div>
-        </div>
-        <div class="f"><label for="fdReceipt">Food deposit receipt no.</label><input type="text" id="fdReceipt" data-k="fdReceipt"></div>
-        <div class="warnline" id="fdWarn"></div>
-      </div>
+      <div class="warnline" id="depWarn"></div>
       <div class="row">
         <div class="f"><label for="status">Booking status</label><select id="status" data-k="status"><option>Draft</option><option>Confirmed</option><option>Completed</option><option>Cancelled</option></select></div>
         <div class="f"><label for="staff">Staff</label><input type="text" id="staff" data-k="staff"></div>
@@ -444,19 +435,19 @@ const SESS={am:{t:"Morning, 7 AM – 12 PM",blocks:["am"]},pm:{t:"Afternoon, 12 
 /* ---------- static options ---------- */
 (function fill(){
   const g=$("guests");for(let i=1;i<=60;i++)g.add(new Option(i,i));
-  const s=$("serving");s.add(new Option("Not needed",""));for(let h=7;h<=22;h++){for(const mm of [0,30]){if(h===22&&mm)continue;const lbl=((h%12)||12)+":"+pad(mm)+" "+(h<12?"AM":"PM");s.add(new Option(lbl,lbl))}}
+  const s=$("serving");s.add(new Option("To confirm",""));for(let h=7;h<=22;h++){for(const mm of [0,30]){if(h===22&&mm)continue;const lbl=((h%12)||12)+":"+pad(mm)+" "+(h<12?"AM":"PM");s.add(new Option(lbl,lbl))}}
   const r=$("rounds");for(let i=0;i<=5;i++)r.add(new Option(i===0?"None":i+" set"+(i>1?"s":"")+" ($"+(i*8)+")",i));
 })();
 
 /* ---------- state ---------- */
 /* ===== SETTINGS: paste your Google Apps Script web app URL here ===== */
-const API_URL="https://script.google.com/macros/s/AKfycbz4rqyUXOhe8KM4YGgAu1SQNn36iJ3BvfjDEi-fik4zUUZvUGxCOwFiPFvgIS2f3G6muA/exec";
+const API_URL="https://script.google.com/macros/s/AKfycbz3uqBzWYDuOBiBiG2nHDjTtxsTrnFq48t1GmYrJ9gsgl1PCnMZdXHKrp22nU_wGuAgYg/exec";
 /* ==================================================================== */
 let PIN="";try{PIN=localStorage.getItem("rtPin")||""}catch(e){}
 let all=[], tab="up", b=null, items=[], dirty=false, origLayoutJSON="[]";
 const blank=()=>({ref:"",name:"",phone:"",eventType:"Birthday",eventOther:"",eventDate:"",session:"",tFrom:"",tTo:"",
   guests:"30",serving:"",defTables:"1",rounds:"0",tv:"0",mic:"0",wb:"0",cat:"none",catNote:"",pkg:"A",pax:"30",noodle:"Mee Goreng",protein:"Ayam",kelupis:"Kelupis",kuih1:"Kusui",kuih2:"Seri Muka",kuih3:"Bingka Susu",cordial:"Manisan",
-  layoutNotes:"",publicTitle:"",mgmt:"0",depPaid:"0",depMethod:"Cash",receipt:"",fdPaid:"0",fdMethod:"Cash",fdReceipt:"",status:"Draft",staff:"",notes:"",createdAt:""});
+  layoutNotes:"",publicTitle:"",mgmt:"0",depPaid:"0",depMethod:"Cash",receipt:"",status:"Draft",staff:"",notes:"",createdAt:""});
 
 function toast(t){const e=$("toast");e.textContent=t;e.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>e.hidden=true,2400)}
 
@@ -481,7 +472,8 @@ function menuLines(x){ // the chosen menu, in order
 
 /* ---------- pricing ---------- */
 function fdDue(x){if(!x.eventDate)return "";const d=new Date(x.eventDate+"T00:00");d.setDate(d.getDate()-7);return fmtDate(d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"))}
-function needFd(x){return isTamuCat(x)&&x.fdPaid!=="1"}
+function needDep(x){return calc(x).deposit>0&&x.depPaid!=="1"}
+function evTime(x){const w={am:"7 AM - 12 PM",pm:"12 - 5 PM",full:"7 AM - 5 PM"}[x.session];if(w)return w;return x.tFrom&&x.tTo?hr(+x.tFrom)+" - "+hr(+x.tTo):"-"}
 function calc(x){
   const L=[];let room=0;
   if(x.session==="am"||x.session==="pm"){room=145;L.push([SESS[x.session].t,145])}
@@ -498,7 +490,7 @@ function calc(x){
   if(isTamuCat(x)&&MENU[x.pkg]){const m=MENU[x.pkg],pax=+x.pax||30;foodSub=m.price*pax;foodDisc=Math.round(foodSub*5)/100;food=foodSub-foodDisc;
     lines=lines.concat([["Tamu Cafe buffet: "+m.label.split(" – ")[1]+", "+pax+" pax × $"+m.price,foodSub,"food"],["Less 5% Tamu Cafe catering discount",-foodDisc,"disc"]])}
   const total=Math.round((space+food)*100)/100;
-  return {L:lines,total,room,disc:foodDisc,food,foodSub,foodDisc,space,deposit:Math.round(space*50)/100,foodDep:Math.round(food*50)/100};
+  return {L:lines,total,room,disc:foodDisc,food,foodSub,foodDisc,space,deposit:Math.round((isTamuCat(x)?food:space)*50)/100,depOn:isTamuCat(x)?"food":"space"};
 }
 /* ---------- availability (app bookings + Google Calendar) ---------- */
 const WIN={am:[7,12],pm:[12,17],full:[7,17]};
@@ -620,11 +612,11 @@ function refresh(){
   const cl=clashes(b);
   $("clash").textContent=cl.length?"Not available: this time overlaps "+cl.map(z=>z.label+" ("+fmtH(z.s)+" – "+fmtH(z.e)+")").join("; ")+". Choose another session or date.":"";
   const c=calc(b);
-  $("lines").innerHTML=c.L.length?c.L.map(l=>'<dt'+(l[2]==="disc"?' class="disc"':'')+'></dt><dd'+(l[2]==="disc"?' class="disc"':'')+'>'+(l[1]<0?"−"+money(-l[1]):money(l[1]))+'</dd>').join("")+(c.food?'<dt>Event space subtotal</dt><dd>'+money(c.space)+'</dd><dt>Food total (after 5% off)</dt><dd>'+money(c.food)+'</dd>':'')+'<dt><b>Grand total</b></dt><dd><b>'+money(c.total)+'</b></dd><dt>50% deposit (event space)</dt><dd>'+money(c.deposit)+'</dd>'+(c.food?'<dt>50% food deposit (compulsory)</dt><dd>'+money(c.foodDep)+'</dd>':''):'<dt>Choose a session to see the price</dt><dd></dd>';
+  $("lines").innerHTML=c.L.length?c.L.map(l=>'<dt'+(l[2]==="disc"?' class="disc"':'')+'></dt><dd'+(l[2]==="disc"?' class="disc"':'')+'>'+(l[1]<0?"−"+money(-l[1]):money(l[1]))+'</dd>').join("")+(c.food?'<dt>Event space subtotal</dt><dd>'+money(c.space)+'</dd><dt>Food total (after 5% off)</dt><dd>'+money(c.food)+'</dd>':'')+'<dt><b>Grand total</b></dt><dd><b>'+money(c.total)+'</b></dd><dt>'+(c.depOn==="food"?"50% deposit (on food)":"50% deposit (event space)")+'</dt><dd>'+money(c.deposit)+'</dd>':'<dt>Choose a session to see the price</dt><dd></dd>';
   [...$("lines").querySelectorAll("dt")].forEach((dt,i)=>{if(c.L[i])dt.textContent=c.L[i][0]});
-  $("totLbl").textContent=money(c.total);$("depLbl").textContent=c.food?"Deposits: space "+money(c.deposit)+" + food "+money(c.foodDep):"Deposit (50% of space) "+money(c.deposit);
-  $("fdBox").hidden=!tamu;
-  if(tamu)$("fdWarn").textContent=b.fdPaid==="1"?"":"Food deposit of "+money(c.foodDep)+" is due by "+(fdDue(b)||"7 days before the event")+". The booking can only be Confirmed once it is paid.";
+  $("totLbl").textContent=money(c.total);$("depLbl").textContent=(c.depOn==="food"?"Deposit (50% of food) ":"Deposit (50% of space) ")+money(c.deposit);
+  $("depPaidLbl").textContent=c.depOn==="food"?"Deposit (50% of food)":"Deposit (50% of space)";
+  $("depWarn").textContent=!c.L.length||b.depPaid==="1"||!c.deposit?"":"Deposit of "+money(c.deposit)+" is required to confirm the booking"+(c.depOn==="food"?" (due by "+(fdDue(b)||"7 days before the event")+" at the latest)":"")+".";
   $("refLbl").textContent=b.ref||"New booking";
 }
 document.querySelectorAll("[data-k]").forEach(el=>{
@@ -632,12 +624,11 @@ document.querySelectorAll("[data-k]").forEach(el=>{
   el.addEventListener(ev,()=>{b[el.dataset.k]=el.value;dirty=true;
     if(el.id==="eventDate"){markSessions();setTimes();fetchBusy(b.eventDate)}
     if(el.id==="session"||el.id==="tFrom")setTimes();
-    if((el.id==="depPaid"||el.id==="fdPaid")&&b.depPaid==="1"&&!needFd(b)&&b.status==="Draft"){b.status="Confirmed";$("status").value="Confirmed"}
-    if(el.id==="fdPaid"&&b.fdPaid==="1"&&b.mgmt==="1"&&b.status==="Draft"){b.status="Confirmed";$("status").value="Confirmed"}
+    if(el.id==="depPaid"&&b.depPaid==="1"&&b.status==="Draft"){b.status="Confirmed";$("status").value="Confirmed"}
     refresh();});
 });
 $("mgmt").addEventListener("change",()=>{b.mgmt=$("mgmt").checked?"1":"0";dirty=true;
-  if(b.mgmt==="1"&&!needFd(b)&&b.status==="Draft"){b.status="Confirmed";$("status").value="Confirmed"}refresh()});
+  if(b.mgmt==="1"&&!needDep(b)&&b.status==="Draft"){b.status="Confirmed";$("status").value="Confirmed"}refresh()});
 function openBooking(x){
   b=Object.assign(blank(),JSON.parse(JSON.stringify(x||{})));
   if(b.cat==="buffet"||b.cat==="trays")b.cat="tamu";delete b.ic;
@@ -661,8 +652,8 @@ $("saveBtn").onclick=async()=>{
   b.updatedAt=new Date().toISOString();
   const c=calc(b);
   if(isTamuCat(b)&&new Set([b.kuih1,b.kuih2,b.kuih3]).size<3){toast("Please choose 3 different kuih");$("kuihWarn").scrollIntoView({block:"center"});return}
-  if(b.status==="Confirmed"&&needFd(b)){toast("Tamu Cafe catering: the 50% food deposit must be paid before the booking is Confirmed. Save as Draft for now.");$("fdBox").scrollIntoView({block:"center"});return}
-  const body=Object.assign({},b,{room:c.room,discount:c.foodDisc,food:c.food,space:c.space,total:c.total,deposit:c.deposit,foodDeposit:isTamuCat(b)?c.foodDep:0,layout:JSON.stringify(items)});
+  if(b.status==="Confirmed"&&needDep(b)){toast("The 50% deposit"+(c.depOn==="food"?" on food":"")+" must be paid before the booking is Confirmed. Save as Draft for now.");$("depPaid").scrollIntoView({block:"center"});return}
+  const body=Object.assign({},b,{room:c.room,discount:c.foodDisc,food:c.food,space:c.space,total:c.total,deposit:c.deposit,layout:JSON.stringify(items)});
   $("saveBtn").disabled=true;$("saveBtn").textContent="Saving…";
   try{
     const r=await api({action:"save",booking:body});
@@ -728,18 +719,19 @@ $("clearBtn").onclick=()=>{if(!clearArmed){clearArmed=true;$("clearBtn").textCon
 /* ---------- Terms & Conditions (edit the wording here) ---------- */
 const TERMS=[
  ["Booking and payment",[
-  "Your date is only secured once the 50% event space deposit is paid. Until then the booking is a provisional hold.",
+  "Your booking is only confirmed once the 50% deposit is paid. Until then it is a provisional hold.",
+  "Without Tamu Cafe catering, the deposit is 50% of the event space total. With Tamu Cafe catering, the deposit is 50% of the food total instead.",
   "The balance is paid on or before the event day, by cash or bank transfer.",
   "Prices are in Brunei dollars (BND)."]],
  ["Tamu Cafe catering",[
   "Buffet packages are for a minimum of 30 and a maximum of 60 pax. A 5% discount is given on food when Tamu Cafe caters your event at Ruang Tamu.",
   "The menu and number of pax must be final 7 days before the event.",
-  "A 50% food deposit is compulsory and is due 7 days before the event. Catering is only confirmed once it is paid.",
-  "The food deposit is non-refundable after the due date, as food is bought and prepared for your event. Pax may be increased after this date if the cafe can manage it, but cannot be reduced."]],
+  "The 50% deposit on food must be paid no later than 7 days before the event.",
+  "The deposit is non-refundable after this date, as food is bought and prepared for your event. Pax may be increased after this date if the cafe can manage it, but cannot be reduced."]],
  ["Changes and cancellation",[
   "Please tell us about any change of date or time as early as possible. Changes depend on availability.",
-  "If you cancel at least 7 days before the event, your event space deposit can be moved to a new date once, within 3 months. If you cancel later than this, the event space deposit is forfeited.",
-  "The event space deposit is not refunded in cash."]],
+  "If you cancel at least 7 days before the event, your deposit can be moved to a new date once, within 3 months. If you cancel later than this, the deposit is forfeited.",
+  "Deposits are not refunded in cash."]],
  ["Time and overtime",[
   "Your booked time includes setting up and clearing up. Please arrive and leave on time.",
   "Extra time is charged at the hourly rate ($30 per hour daytime, $40 per hour evening), if the space is free."]],
@@ -769,7 +761,7 @@ async function buildPdf(x){
   doc.setFont("helvetica","normal");T("Booking no. "+(x.ref||"-"),M+W,y,{align:"right"});
   y+=5;
   // customer grid
-  const rows=[["Name",x.name,"Event date",fmtDate(x.eventDate)],["Phone",x.phone,"No. of guests",x.guests+"  (max. 60 pax)"],["Event type",x.eventType==="Other"?(x.eventOther||"Other"):x.eventType,"Serving time",x.serving||"-"]];
+  const rows=[["Name",x.name,"Event date",fmtDate(x.eventDate)],["Phone",x.phone,"No. of guests",x.guests+"  (max. 60 pax)"],["Event type",x.eventType==="Other"?(x.eventOther||"Other"):x.eventType,"Event time",evTime(x)]];
   doc.setDrawColor(...lineC);doc.setLineWidth(.25);
   rows.forEach((r,i)=>{const ry=y+i*8;doc.rect(M,ry,W,8);doc.line(M+24,ry,M+24,ry+8);doc.line(M+90,ry,M+90,ry+8);doc.line(M+117,ry,M+117,ry+8);
     doc.setTextColor(...grey);doc.setFontSize(9);T(r[0],M+2,ry+5.3);T(r[2],M+92,ry+5.3);
@@ -809,12 +801,12 @@ async function buildPdf(x){
     T("MANAGEMENT EVENT - no charge for the space (covered by the per-person admission fee)",cx[1],y+5.1);doc.setFont("helvetica","normal");doc.setTextColor(...ink);y+=7.5}
   const to=th/2+1.4;
   doc.setFont("helvetica","bold");doc.rect(M,y,W,th);T("Grand total",cx[1],y+to);T(c.total.toFixed(2),M+W-2,y+to,{align:"right"});y+=th;
-  doc.rect(M,y,W,th);T(ONE?"50% deposit for the event space":"50% deposit to confirm booking (event space only)",cx[1],y+to);T(c.deposit.toFixed(2),M+W-2,y+to,{align:"right"});y+=th;
-  if(ONE){doc.setFillColor(241,226,223);doc.rect(M,y,W,th,"FD");doc.setTextColor(...maroon);T("50% food deposit - COMPULSORY, due by "+(fdDue(x)||"7 days before the event"),cx[1],y+to);T(c.foodDep.toFixed(2),M+W-2,y+to,{align:"right"});doc.setTextColor(...ink);y+=th}
+  if(ONE){doc.setFillColor(241,226,223);doc.rect(M,y,W,th,"FD");doc.setTextColor(...maroon);T("50% deposit on food to confirm booking - due by "+(fdDue(x)||"7 days before the event")+" at the latest",cx[1],y+to)}
+  else{doc.rect(M,y,W,th);T("50% deposit to confirm booking (event space)",cx[1],y+to)}
+  T(c.deposit.toFixed(2),M+W-2,y+to,{align:"right"});doc.setTextColor(...ink);y+=th;
   doc.setFont("helvetica","normal");doc.setFontSize(10);y+=ONE?5.5:7;
   if(x.mgmt==="1"&&!c.food){T("Payment: not required (management event).",M,y);y+=6}
-  else{if(!(x.mgmt==="1")){T((ONE?"Space deposit: ":"Deposit: ")+(x.depPaid==="1"?money(c.deposit)+" paid by "+x.depMethod+(x.receipt?"   Receipt no. "+x.receipt:""):"$________ on ________   Receipt ________"),M,y);y+=ONE?5.5:6}
-  if(ONE){T("Food deposit: "+(x.fdPaid==="1"?money(c.foodDep)+" paid by "+x.fdMethod+(x.fdReceipt?"   Receipt no. "+x.fdReceipt:""):"$________ on ________   Receipt ________"),M,y);y+=5.5}T("Balance: $________ on ________   [ ] Cash  [ ] Transfer   Receipt ________",M,y);}
+  else{T("Deposit: "+(x.depPaid==="1"?money(c.deposit)+" paid by "+x.depMethod+(x.receipt?"   Receipt no. "+x.receipt:""):"$________ on ________   Receipt ________"),M,y);y+=6;T("Balance: $________ on ________   [ ] Cash  [ ] Transfer   Receipt ________",M,y);}
   if(x.notes){y+=6;doc.setFontSize(9);const nl=doc.splitTextToSize("Notes: "+x.notes,W).slice(0,3);T(nl,M,y);y+=nl.length*4}
   y+=ONE?6:7;doc.setFontSize(9.5);doc.setFont("helvetica","bold");T("Terms & Conditions:",M,y);doc.setFont("helvetica","normal");
   T("see page 2. By signing below, I agree to the Terms & Conditions.",M+35,y);
@@ -823,16 +815,16 @@ async function buildPdf(x){
     let rr=0,cc=0;cells.forEach(k=>{if(!k){rr++;cc=0;return}k.r=rr;k.c=cc;if(k.wide||cc===1){rr++;cc=0}else cc=1});const nrows=rr+(cc?1:0);
     const bh=7+nrows*5.6+(x.catNote?5:0)+5;
     doc.setFillColor(248,244,241);doc.setDrawColor(...lineC);doc.rect(M,y,W,bh,"FD");
-    doc.setFont("helvetica","bold");doc.setFontSize(10);doc.setTextColor(...maroon);T("Tamu Cafe menu: "+mm.label+"  ·  "+(x.pax||30)+" pax",M+3,y+5.5);
+    doc.setFont("helvetica","bold");doc.setFontSize(10);doc.setTextColor(...maroon);T("Tamu Cafe menu: "+mm.label+"  ·  "+(x.pax||30)+" pax  ·  serving "+(x.serving||"time to confirm"),M+3,y+5.5);
     doc.setFont("helvetica","normal");doc.setTextColor(...ink);doc.setFontSize(8.8);
     let my=y+11.5;cells.forEach(k=>{if(!k)return;const mx=M+3+k.c*89,yy=my+k.r*5.6;box(mx,yy,true);T(doc.splitTextToSize(k.t,k.wide?W-12:82)[0],mx+5,yy)});my+=nrows*5.6;
     if(x.catNote){T(doc.splitTextToSize("Other requests: "+x.catNote,W-6)[0],M+3,my);my+=5}
-    doc.setFontSize(8);doc.setTextColor(...grey);T("Menu and pax final by "+(fdDue(x)||"7 days before the event")+"  ·  30 - 60 pax  ·  Food deposit "+money(c.foodDep)+" is non-refundable after this date",M+3,my);
+    doc.setFontSize(8);doc.setTextColor(...grey);T("Menu and pax final by "+(fdDue(x)||"7 days before the event")+"  ·  30 - 60 pax  ·  Deposit "+money(c.deposit)+" is non-refundable after this date",M+3,my);
     doc.setTextColor(...ink);doc.setFontSize(9.5);y+=bh}
   y+=ONE?8.5:12;T("Customer signature ____________________   Date __________   Staff "+(x.staff?x.staff:"____________________"),M,y);
   if(ONE){y+=7.5;T("Received by Tamu Cafe ____________________   Date __________",M,y)}
   y+=8;doc.setFont("helvetica","italic");T("Office:",M,y);doc.setFont("helvetica","normal");
-  [["Calendar",false],["Receipt",x.depPaid==="1"&&(!ONE||x.fdPaid==="1")],["Cafe order",false],["Room checked",false],["Balance paid",false]].reduce((xx,[l,on])=>{box(xx,y,on);T(l,xx+5,y);return xx+doc.getTextWidth(l)+12},M+14);
+  [["Calendar",false],["Receipt",x.depPaid==="1"],["Cafe order",false],["Room checked",false],["Balance paid",false]].reduce((xx,[l,on])=>{box(xx,y,on);T(l,xx+5,y);return xx+doc.getTextWidth(l)+12},M+14);
   doc.setFontSize(7.5);doc.setTextColor(...grey);T("Ruang Tamu Event Space  ·  WhatsApp +673 887 7306  ·  Call +673 886 1673  ·  Prices in BND",105,290,{align:"center"});
 
   // Terms & Conditions page
@@ -898,7 +890,7 @@ async function buildPdf(x){
   if(x.tv==="1")before.push("Set up the Smart TV in its agreed place and test screen sharing / HDMI");
   if(x.mic==="1")before.push("Set up the microphone & speaker, test sound and charge or replace batteries");
   if(x.wb==="1")before.push("Place the whiteboard with working markers and a duster");
-  if(ec==="tamu"&&x.fdPaid!=="1")before.push("COLLECT THE 50% FOOD DEPOSIT of "+money(calc(x).foodDep)+" by "+(fdDue(x)||"7 days before the event")+". Catering is not confirmed until it is paid");
+  if(x.depPaid!=="1"&&calc(x).deposit>0)before.push("COLLECT THE 50% DEPOSIT"+(ec==="tamu"?" ON FOOD":"")+" of "+money(calc(x).deposit)+(ec==="tamu"?" by "+(fdDue(x)||"7 days before the event"):"")+". The booking is not confirmed until it is paid");
   if(ec==="tamu")before.push("Give the Tamu Cafe copy of the booking form to Tamu Cafe: "+(MENU[x.pkg]||MENU.A).label+", "+(x.pax||30)+" pax, serving at "+(x.serving||"(time to confirm)"));
   if(ec==="outside")before.push("Outside caterer: "+(x.catNote||"-")+". Clear the food table area and agree their arrival time");
   if(ec&&ec!=="none")before.push("Set up the food / buffet table");
@@ -906,7 +898,7 @@ async function buildPdf(x){
   before.push("Tidy the surau and lay out prayer mats");
   before.push("Turn on air-conditioning and lights 30 minutes before "+startT);
   groups.push(["Before the event (room ready by "+startT+")",before]);
-  const during=["Welcome the customer and check the room together",x.mgmt==="1"?"Management event: no room payment to collect":"Confirm the balance payment of "+money(calc(x).total-(x.depPaid==="1"&&x.mgmt!=="1"?calc(x).deposit:0)-(isTamuCat(x)&&x.fdPaid==="1"?calc(x).foodDep:0))+" is collected"];
+  const during=["Welcome the customer and check the room together",x.mgmt==="1"?"Management event: no room payment to collect":"Confirm the balance payment of "+money(calc(x).total-(x.depPaid==="1"?calc(x).deposit:0))+" is collected"];
   if(x.layoutNotes)during.push("Customer requests: "+x.layoutNotes);
   if(x.notes)during.push("Notes: "+x.notes);
   groups.push(["On the day",during]);
