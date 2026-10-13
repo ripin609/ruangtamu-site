@@ -441,7 +441,7 @@ const SESS={am:{t:"Morning, 7 AM – 12 PM",blocks:["am"]},pm:{t:"Afternoon, 12 
 
 /* ---------- state ---------- */
 /* ===== SETTINGS: paste your Google Apps Script web app URL here ===== */
-const API_URL="https://script.google.com/macros/s/AKfycbz3uqBzWYDuOBiBiG2nHDjTtxsTrnFq48t1GmYrJ9gsgl1PCnMZdXHKrp22nU_wGuAgYg/exec";
+const API_URL="https://script.google.com/macros/s/AKfycbwxWSyB6LlKEaaVIH_Z_Bms82zHfxZmXOcCmHyuITD3VNH7Is7nRtqFPuWZILnRz7NFmg/exec";
 /* ==================================================================== */
 let PIN="";try{PIN=localStorage.getItem("rtPin")||""}catch(e){}
 let all=[], tab="up", b=null, items=[], dirty=false, origLayoutJSON="[]";
@@ -602,7 +602,7 @@ function refresh(){
     let warn="";if(b.eventDate){const days=Math.round((new Date(b.eventDate+"T00:00")-new Date(todayStr()+"T00:00"))/864e5);if(days<7)warn="Tamu Cafe needs at least 7 days' notice for catering. This event is in "+days+" day"+(days===1?"":"s")+".";}
     $("noticeWarn").textContent=warn;
     const c0=calc(b);
-    $("foodSum").innerHTML='<span>Food: '+(+b.pax)+' pax × $'+MENU[b.pkg].price+'</span><span>'+money(c0.foodSub)+'</span><span class="disc">Less 5% catering discount</span><span class="disc">−'+money(c0.foodDisc)+'</span><b>Food total</b><b>'+money(c0.food)+'</b>';
+    $("foodSum").innerHTML='<span>Food: '+(+b.pax)+' pax × $'+(MENU[b.pkg]||MENU.A).price+'</span><span>'+money(c0.foodSub)+'</span><span class="disc">Less 5% catering discount</span><span class="disc">−'+money(c0.foodDisc)+'</span><b>Food total</b><b>'+money(c0.food)+'</b>';
   }
   const noTables=b.defTables==="0"&&!(+b.rounds);
   $("defHint").textContent=noTables?"Empty floor: no tables or chairs will be set up (e.g. Pilates).":"";
@@ -630,8 +630,8 @@ document.querySelectorAll("[data-k]").forEach(el=>{
 $("mgmt").addEventListener("change",()=>{b.mgmt=$("mgmt").checked?"1":"0";dirty=true;
   if(b.mgmt==="1"&&!needDep(b)&&b.status==="Draft"){b.status="Confirmed";$("status").value="Confirmed"}refresh()});
 function openBooking(x){
-  b=Object.assign(blank(),JSON.parse(JSON.stringify(x||{})));
-  if(b.cat==="buffet"||b.cat==="trays")b.cat="tamu";delete b.ic;
+  b=blank();const src=JSON.parse(JSON.stringify(x||{}));Object.keys(src).forEach(k=>{if(src[k]!==""&&src[k]!=null)b[k]=src[k]});
+  if(b.cat==="buffet"||b.cat==="trays")b.cat="tamu";if(!MENU[b.pkg])b.pkg="A";delete b.ic;
   items=[];origLayoutJSON="[]";dirty=false;$("discardBar").hidden=true;$("pdfMsg").textContent="";
   fillForm();show("edit");drawAll();
   try{items=x&&x.layout?JSON.parse(x.layout):[]}catch(e){items=[]}
