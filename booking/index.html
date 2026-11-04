@@ -486,11 +486,12 @@ function calc(x){
   let space=L.reduce((a,l)=>a+l[1],0);
   let lines=L;
   if(x.mgmt==="1"){lines=L.map(l=>[l[0],0]);lines.push(["Management event: no charge for the space (covered by admission fee)",0,"disc"]);space=0;room=0}
-  let food=0,foodSub=0,foodDisc=0;
-  if(isTamuCat(x)&&MENU[x.pkg]){const m=MENU[x.pkg],pax=+x.pax||30;foodSub=m.price*pax;foodDisc=Math.round(foodSub*5)/100;food=foodSub-foodDisc;
-    lines=lines.concat([["Tamu Cafe buffet: "+m.label.split(" – ")[1]+", "+pax+" pax × $"+m.price,foodSub,"food"],["Less 5% Tamu Cafe catering discount",-foodDisc,"disc"]])}
+  let food=0,foodSub=0,foodDisc=0,spaceDisc=0;
+  if(isTamuCat(x)&&MENU[x.pkg]){const m=MENU[x.pkg],pax=+x.pax||30;foodSub=m.price*pax;food=foodSub;
+    if(space>0){spaceDisc=Math.round(space*5)/100;space=Math.round((space-spaceDisc)*100)/100;lines=lines.concat([["Less 5% off event space (Tamu Cafe catering)",-spaceDisc,"disc"]])}
+    lines=lines.concat([["Tamu Cafe buffet: "+m.label.split(" – ")[1]+", "+pax+" pax × $"+m.price,foodSub,"food"]])}
   const total=Math.round((space+food)*100)/100;
-  return {L:lines,total,room,disc:foodDisc,food,foodSub,foodDisc,space,deposit:Math.round((isTamuCat(x)?food:space)*50)/100,depOn:isTamuCat(x)?"food":"space"};
+  return {L:lines,total,room,disc:spaceDisc,spaceDisc,food,foodSub,foodDisc,space,deposit:Math.round((isTamuCat(x)?food:space)*50)/100,depOn:isTamuCat(x)?"food":"space"};
 }
 /* ---------- availability (app bookings + Google Calendar) ---------- */
 const WIN={am:[7,12],pm:[12,17],full:[7,17]};
@@ -602,7 +603,7 @@ function refresh(){
     let warn="";if(b.eventDate){const days=Math.round((new Date(b.eventDate+"T00:00")-new Date(todayStr()+"T00:00"))/864e5);if(days<7)warn="Tamu Cafe needs at least 7 days' notice for catering. This event is in "+days+" day"+(days===1?"":"s")+".";}
     $("noticeWarn").textContent=warn;
     const c0=calc(b);
-    $("foodSum").innerHTML='<span>Food: '+(+b.pax)+' pax × $'+(MENU[b.pkg]||MENU.A).price+'</span><span>'+money(c0.foodSub)+'</span><span class="disc">Less 5% catering discount</span><span class="disc">−'+money(c0.foodDisc)+'</span><b>Food total</b><b>'+money(c0.food)+'</b>';
+    $("foodSum").innerHTML='<span>Food: '+(+b.pax)+' pax × $'+(MENU[b.pkg]||MENU.A).price+'</span><span>'+money(c0.foodSub)+'</span><b>Food total</b><b>'+money(c0.food)+'</b>'+(c0.spaceDisc?'<span class="disc">5% off event space (with Tamu Cafe)</span><span class="disc">−'+money(c0.spaceDisc)+'</span>':'');
   }
   const noTables=b.defTables==="0"&&!(+b.rounds);
   $("defHint").textContent=noTables?"Empty floor: no tables or chairs will be set up (e.g. Pilates).":"";
@@ -612,7 +613,7 @@ function refresh(){
   const cl=clashes(b);
   $("clash").textContent=cl.length?"Not available: this time overlaps "+cl.map(z=>z.label+" ("+fmtH(z.s)+" – "+fmtH(z.e)+")").join("; ")+". Choose another session or date.":"";
   const c=calc(b);
-  $("lines").innerHTML=c.L.length?c.L.map(l=>'<dt'+(l[2]==="disc"?' class="disc"':'')+'></dt><dd'+(l[2]==="disc"?' class="disc"':'')+'>'+(l[1]<0?"−"+money(-l[1]):money(l[1]))+'</dd>').join("")+(c.food?'<dt>Event space subtotal</dt><dd>'+money(c.space)+'</dd><dt>Food total (after 5% off)</dt><dd>'+money(c.food)+'</dd>':'')+'<dt><b>Grand total</b></dt><dd><b>'+money(c.total)+'</b></dd><dt>'+(c.depOn==="food"?"50% deposit (on food)":"50% deposit (event space)")+'</dt><dd>'+money(c.deposit)+'</dd>':'<dt>Choose a session to see the price</dt><dd></dd>';
+  $("lines").innerHTML=c.L.length?c.L.map(l=>'<dt'+(l[2]==="disc"?' class="disc"':'')+'></dt><dd'+(l[2]==="disc"?' class="disc"':'')+'>'+(l[1]<0?"−"+money(-l[1]):money(l[1]))+'</dd>').join("")+(c.food?'<dt>Event space subtotal'+(c.spaceDisc?' (after 5% off)':'')+'</dt><dd>'+money(c.space)+'</dd><dt>Food total</dt><dd>'+money(c.food)+'</dd>':'')+'<dt><b>Grand total</b></dt><dd><b>'+money(c.total)+'</b></dd><dt>'+(c.depOn==="food"?"50% deposit (on food)":"50% deposit (event space)")+'</dt><dd>'+money(c.deposit)+'</dd>':'<dt>Choose a session to see the price</dt><dd></dd>';
   [...$("lines").querySelectorAll("dt")].forEach((dt,i)=>{if(c.L[i])dt.textContent=c.L[i][0]});
   $("totLbl").textContent=money(c.total);$("depLbl").textContent=(c.depOn==="food"?"Deposit (50% of food) ":"Deposit (50% of space) ")+money(c.deposit);
   $("depPaidLbl").textContent=c.depOn==="food"?"Deposit (50% of food)":"Deposit (50% of space)";
@@ -653,7 +654,7 @@ $("saveBtn").onclick=async()=>{
   const c=calc(b);
   if(isTamuCat(b)&&new Set([b.kuih1,b.kuih2,b.kuih3]).size<3){toast("Please choose 3 different kuih");$("kuihWarn").scrollIntoView({block:"center"});return}
   if(b.status==="Confirmed"&&needDep(b)){toast("The 50% deposit"+(c.depOn==="food"?" on food":"")+" must be paid before the booking is Confirmed. Save as Draft for now.");$("depPaid").scrollIntoView({block:"center"});return}
-  const body=Object.assign({},b,{room:c.room,discount:c.foodDisc,food:c.food,space:c.space,total:c.total,deposit:c.deposit,layout:JSON.stringify(items)});
+  const body=Object.assign({},b,{room:c.room,discount:c.spaceDisc,food:c.food,space:c.space,total:c.total,deposit:c.deposit,layout:JSON.stringify(items)});
   $("saveBtn").disabled=true;$("saveBtn").textContent="Saving…";
   try{
     const r=await api({action:"save",booking:body});
@@ -724,7 +725,7 @@ const TERMS=[
   "The balance is paid on or before the event day, by cash or bank transfer.",
   "Prices are in Brunei dollars (BND)."]],
  ["Tamu Cafe catering",[
-  "Buffet packages are for a minimum of 30 and a maximum of 60 pax. A 5% discount is given on food when Tamu Cafe caters your event at Ruang Tamu.",
+  "Buffet packages are for a minimum of 30 and a maximum of 60 pax. When Tamu Cafe caters your event, you get 5% off the event space.",
   "The menu and number of pax must be final 7 days before the event.",
   "The 50% deposit on food must be paid no later than 7 days before the event.",
   "The deposit is non-refundable after this date, as food is bought and prepared for your event. Pax may be increased after this date if the cafe can manage it, but cannot be reduced."]],
@@ -787,8 +788,8 @@ async function buildPdf(x){
     [x.mic==="1","Microphone & Speaker","$5","-",x.mic==="1"?5:null],
     [x.wb==="1","Whiteboard","$3","-",x.wb==="1"?3:null],
   ].map(r=>r.concat(["space"]));
-  if(isTamu){R.push([true,"Tamu Cafe buffet: "+mm.label.split(" – ")[1]+" (menu below)","$"+mm.price+"/pax",x.pax||30,c.foodSub,"food"]);
-    R.push([true,"Less 5% Tamu Cafe catering discount","","",-c.foodDisc,"food"]);}
+  if(isTamu){if(c.spaceDisc)R.push([true,"Less 5% off event space (Tamu Cafe catering)","","",-c.spaceDisc,"space"]);
+    R.push([true,"Tamu Cafe buffet: "+mm.label.split(" – ")[1]+" (menu below)","$"+mm.price+"/pax",x.pax||30,c.foodSub,"food"]);}
   else R.push([x.cat!=="none"&&!!x.cat,catLbl,"","",null,"food"]);
   const cx=[M,M+9,M+124,M+146,M+160];
   doc.setFillColor(243,238,235);doc.rect(M,y,W,7,"F");doc.setTextColor(...grey);doc.setFontSize(9);
